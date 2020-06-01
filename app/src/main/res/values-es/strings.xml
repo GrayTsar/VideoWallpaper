@@ -1,5 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Live Wallpaper - Any Video</string>
     <string name="video">Video</string>
-    <string name="image">Image</string>
+    <string name="image">Imagen</string>
 </resources>

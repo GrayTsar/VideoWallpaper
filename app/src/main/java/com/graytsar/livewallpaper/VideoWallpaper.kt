@@ -1,26 +1,17 @@
 package com.graytsar.livewallpaper
 
-import android.annotation.TargetApi
-import android.content.ContentResolver
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.ImageDecoder
-import android.graphics.Movie
-import android.graphics.Rect
+import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.Drawable
-import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.service.wallpaper.WallpaperService
-import android.util.Log
 import android.view.Surface
 import android.view.SurfaceHolder
-import androidx.core.net.toFile
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import java.lang.Exception
 
@@ -29,9 +20,9 @@ class VideoWallpaper:WallpaperService() {
         return object:WallpaperService.Engine(){
             var mediaPlayer:MediaPlayer? = null
             var fUri:String? = null
-            var isImage = false
+            var isVideo = false
 
-            var hol:SurfaceHolder? = null
+            var holderInstance:SurfaceHolder? = null
 
             //api < 28
             var movie: Movie? = null
@@ -43,51 +34,40 @@ class VideoWallpaper:WallpaperService() {
             init{
                 val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
                 fUri = sharedPref.getString(keyVideo, null)
-                val extension = fUri!!.substring(fUri!!.lastIndexOf("."))
-
-                if(extension == ".gif" || extension == ".webp" || extension == ".heif"){
-                    isImage = true
-                }
-
-            }
-
-            override fun onCreate(surfaceHolder: SurfaceHolder?) {
-                Log.d("DBG:", "onCreate")
-                super.onCreate(surfaceHolder)
+                isVideo = sharedPref.getBoolean(keyType, false)
             }
 
             override fun onSurfaceCreated(holder: SurfaceHolder?) {
-                Log.d("DBG:", "onSurfaceCreated")
-                hol = holder
+                holderInstance = holder
 
-                if(isImage){
-                    if(Build.VERSION.SDK_INT >= 28){
-                        val source = ImageDecoder.createSource(contentResolver, Uri.parse(fUri))
-                        drawable = ImageDecoder.decodeDrawable(source)
+                if (isVideo) {
+                    clearImage()
 
-                        if(drawable is AnimatedImageDrawable){
-                            val anim = drawable as AnimatedImageDrawable
-                            anim.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-                            anim.start()
-                        }
-                    } else  {
-                        val c = contentResolver.openInputStream(Uri.parse(fUri))
-
-                        movie = Movie.decodeStream(c)
-                    }
-                    dJob = startJob()
-                } else {
                     mediaPlayer = MediaPlayer.create(this@VideoWallpaper, Uri.parse(fUri), mSurfaceHolder(holder!!)).apply {
                         isLooping = true
                         setVolume(0f,0f)
                     }
+                } else if(!isVideo){
+                    clearVideo()
+
+                    if(Build.VERSION.SDK_INT >= 28){
+                            val source = ImageDecoder.createSource(contentResolver, Uri.parse(fUri))
+                            drawable = ImageDecoder.decodeDrawable(source)
+
+                            if(drawable is AnimatedImageDrawable){
+                                val anim = drawable as AnimatedImageDrawable
+                                anim.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                                anim.start()
+                            }
+                    } else {
+                            movie = Movie.decodeStream(contentResolver.openInputStream(Uri.parse(fUri)))
+                    }
+                    dJob = startJob()
                 }
                 super.onSurfaceCreated(holder)
             }
 
             override fun onVisibilityChanged(visible: Boolean) {
-                Log.d("DBG:", "onVisibilityChanged $visible")
-
                 if(visible){
                     mediaPlayer?.start()
 
@@ -115,21 +95,17 @@ class VideoWallpaper:WallpaperService() {
             }
 
             override fun onDestroy() {
-                mediaPlayer?.apply {
-                    stop()
-                    release()
-                }
-
-                dJob?.cancel()
-
                 super.onDestroy()
+
+                clearVideo()
+                clearImage()
             }
 
             private fun startJob(): Job {
                 return GlobalScope.launch {
                     try{
-                        while(hol != null){
-                            val canvas = hol?.lockCanvas()
+                        while(holderInstance != null){
+                            val canvas = holderInstance?.lockCanvas()
 
                             if(Build.VERSION.SDK_INT >= 28){
                                 drawable?.draw(canvas!!)
@@ -139,14 +115,58 @@ class VideoWallpaper:WallpaperService() {
                                     it.setTime((System.currentTimeMillis() % movie!!.duration()).toInt())
                                 }
                             }
-                            hol?.unlockCanvasAndPost(canvas!!)
+                            holderInstance?.unlockCanvasAndPost(canvas!!)
                         }
                     } catch (e:Exception){
 
                     }
                 }
             }
+
+            private fun clearImage(){
+                dJob?.cancel()
+                dJob = null
+
+                if(Build.VERSION.SDK_INT >= 28){
+                    if(drawable is AnimatedImageDrawable) {
+                        (drawable as AnimatedImageDrawable).stop()
+                    }
+                }
+
+                drawable = null
+                movie = null
+            }
+
+            private fun clearVideo(){
+                mediaPlayer?.stop()
+                mediaPlayer?.release()
+                mediaPlayer = null
+            }
+
+            /*
+            private fun drawError(holder: SurfaceHolder){
+                val c = holder.lockCanvas()
+                val rect = c.clipBounds
+                c.drawText("No permission", 50f, rect.centerY().toFloat()- 50f,
+                    Paint().apply {
+                        color = Color.WHITE
+                        textSize = 52f
+                    })
+                c.drawText("Open App to get Permission", 50f, rect.centerY().toFloat(),
+                    Paint().apply {
+                        color = Color.WHITE
+                        textSize = 52f
+                    })
+                c.drawText("And Select Video / Image", 50f, rect.centerY().toFloat() + 50,
+                    Paint().apply {
+                        color = Color.WHITE
+                        textSize = 52f
+                    })
+                holder.unlockCanvasAndPost(c)
+            }
+            */
         }
+
     }
 
     class mSurfaceHolder(private val holder: SurfaceHolder):SurfaceHolder{
