@@ -7,7 +7,6 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 
 const val keySharedPrefVideo = "video"
 const val keyVideo = "key"
@@ -39,15 +38,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(request:Int, result:Int, resultData: Intent?){
         super.onActivityResult(request, result, resultData)
-        if(resultData != null && resultData.data != null){
-
+        resultData?.data?.let {
             try{
                 WallpaperManager.getInstance(applicationContext).clear()
             } catch (e:Exception){
 
             }
 
-            val fUri = resultData.data!!
+            val fUri = it
             val extension = contentResolver.getType(fUri)
 
             contentResolver.takePersistableUriPermission(fUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -57,7 +55,6 @@ class MainActivity : AppCompatActivity() {
             if(!isVideo && extension != "image/gif" && extension != "image/webp"){
                 val manager:WallpaperManager = WallpaperManager.getInstance(applicationContext)
                 manager.setStream(contentResolver.openInputStream(fUri))
-                finish()
                 return
             }
 
