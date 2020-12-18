@@ -7,10 +7,17 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 const val keySharedPrefVideo = "video"
 const val keyVideo = "key"
 const val keyType = "type"
+
+const val videoFolder = "video"
+const val imageFolder = "image"
+
+const val videoName = "video"
+const val imageName = "image"
 
 class MainActivity : AppCompatActivity() {
     private var isVideo = false
@@ -42,7 +49,7 @@ class MainActivity : AppCompatActivity() {
             try{
                 WallpaperManager.getInstance(applicationContext).clear()
             } catch (e:Exception){
-
+                FirebaseCrashlytics.getInstance().recordException(e)
             }
 
             val fUri = it
