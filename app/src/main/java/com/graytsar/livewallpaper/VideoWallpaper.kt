@@ -56,9 +56,20 @@ class VideoWallpaper:WallpaperService() {
             holderInstance = holder
 
             val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
-            val fUri = Uri.parse(sharedPref.getString(keyVideo, null))
+            var fUri: Uri? = null
+
+            try {
+                fUri = Uri.parse(sharedPref.getString(keyVideo, null))
+            } catch (e: NullPointerException) {
+                FirebaseCrashlytics.getInstance().recordException(e)
+            }
+
 
             if(isPreview) {
+                if(fUri == null) {
+                    return
+                }
+
                 if(Build.VERSION.SDK_INT >= 28){
                     val source = ImageDecoder.createSource(contentResolver, fUri)
                     animatedImageDrawable = ImageDecoder.decodeDrawable(source)
@@ -84,7 +95,7 @@ class VideoWallpaper:WallpaperService() {
 
                 var pfd: ParcelFileDescriptor? = null
                 try {
-                    pfd = contentResolver.openFileDescriptor(fUri, "r")!!
+                    pfd = contentResolver.openFileDescriptor(fUri!!, "r")!!
                 } catch (e:Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
@@ -219,9 +230,20 @@ class VideoWallpaper:WallpaperService() {
             super.onSurfaceCreated(holder)
 
             val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
-            val fUri = Uri.parse(sharedPref.getString(keyVideo, null))
+            var fUri: Uri? = null
+
+            try {
+                fUri = Uri.parse(sharedPref.getString(keyVideo, null))
+            } catch (e: NullPointerException) {
+                FirebaseCrashlytics.getInstance().recordException(e)
+            }
+
 
             if(isPreview) {
+                if(fUri == null) {
+                    return
+                }
+
                 mediaPlayer = MediaPlayer.create(this@VideoWallpaper, fUri, VideoWallpaperSurfaceHolder(holder!!)).apply {
                     isLooping = true
                     setVolume(0f,0f)
@@ -238,7 +260,7 @@ class VideoWallpaper:WallpaperService() {
 
                 var pfd: ParcelFileDescriptor? = null
                 try {
-                    pfd = contentResolver.openFileDescriptor(fUri, "r")!!
+                    pfd = contentResolver.openFileDescriptor(fUri!!, "r")!!
                 } catch (e:Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
