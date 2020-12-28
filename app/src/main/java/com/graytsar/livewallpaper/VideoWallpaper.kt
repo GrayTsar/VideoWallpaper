@@ -93,29 +93,17 @@ class VideoWallpaper:WallpaperService() {
                     directory.mkdirs()
                 }
 
-                var pfd: ParcelFileDescriptor? = null
                 try {
-                    pfd = contentResolver.openFileDescriptor(fUri!!, "r")!!
+                    val inputStream = contentResolver.openInputStream(fUri!!)!!
+                    val fileOutputStream = FileOutputStream("$basePath/$folder/$imageName", false)
+
+                    inputStream.copyTo(fileOutputStream)
+
+                    fileOutputStream.close()
+                    inputStream.close()
                 } catch (e:Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
-
-                pfd?.let { pfd ->
-                    if(pfd.fileDescriptor.valid()) {
-                        try {
-                            val inputStream = FileInputStream(pfd.fileDescriptor)
-                            val fileOutputStream = FileOutputStream("$basePath/$folder/$imageName", false)
-
-                            inputStream.copyTo(fileOutputStream)
-
-                            fileOutputStream.close()
-                            inputStream.close()
-                        } catch (e:Exception) {
-                            FirebaseCrashlytics.getInstance().recordException(e)
-                        }
-                    }
-                }
-                pfd?.close()
 
                 if(Build.VERSION.SDK_INT >= 28){
                     val source = ImageDecoder.createSource(File("$basePath/$folder/$imageName"))
@@ -258,29 +246,18 @@ class VideoWallpaper:WallpaperService() {
                     directory.mkdirs()
                 }
 
-                var pfd: ParcelFileDescriptor? = null
                 try {
-                    pfd = contentResolver.openFileDescriptor(fUri!!, "r")!!
+                    val inputStream = contentResolver.openInputStream(fUri!!)!!
+                    val fileOutputStream = FileOutputStream("$basePath/$folder/$videoName", false)
+
+                    inputStream.copyTo(fileOutputStream)
+
+                    fileOutputStream.close()
+                    inputStream.close()
                 } catch (e:Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
 
-                pfd?.let { pfd ->
-                    if(pfd.fileDescriptor.valid()) {
-                        try {
-                            val inputStream = FileInputStream(pfd.fileDescriptor)
-                            val fileOutputStream = FileOutputStream("$basePath/$folder/$videoName", false)
-
-                            inputStream.copyTo(fileOutputStream)
-
-                            fileOutputStream.close()
-                            inputStream.close()
-                        } catch (e:Exception) {
-                            FirebaseCrashlytics.getInstance().recordException(e)
-                        }
-                    }
-                }
-                pfd?.close()
 
                 val file = File("${applicationContext.filesDir.path}/$videoFolder").listFiles()
                 if(file.isNotEmpty() && file[0].exists()) {

@@ -2,7 +2,6 @@ plugins {
     id 'com.android.application'
     id 'com.google.gms.google-services'
     id 'kotlin-android'
-    id 'kotlin-android-extensions'
     id 'kotlin-kapt'
     id 'com.google.firebase.crashlytics'
 }
@@ -15,8 +14,8 @@ android {
         applicationId "com.graytsar.livewallpaper"
         minSdkVersion 19
         targetSdkVersion 30
-        versionCode 6
-        versionName "1.0.5"
+        versionCode 7
+        versionName "1.0.6"
 
         vectorDrawables.useSupportLibrary = true
 
@@ -35,6 +34,10 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+
+    buildFeatures {
+        dataBinding = true
     }
 
     kotlinOptions {
