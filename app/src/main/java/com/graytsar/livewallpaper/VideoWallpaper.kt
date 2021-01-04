@@ -8,7 +8,6 @@ import android.graphics.drawable.Drawable
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
-import android.os.ParcelFileDescriptor
 import android.service.wallpaper.WallpaperService
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -16,9 +15,8 @@ import androidx.core.net.toUri
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.lang.Exception
+import kotlin.Exception
 
 class VideoWallpaper:WallpaperService() {
 
@@ -183,6 +181,7 @@ class VideoWallpaper:WallpaperService() {
 
                                 movie.draw(canvas, 0f, 0f)
                                 movie.setTime((System.currentTimeMillis() % movie.duration()).toInt())
+
                             }
                         }
                         holderInstance?.unlockCanvasAndPost(canvas!!)
@@ -232,9 +231,13 @@ class VideoWallpaper:WallpaperService() {
                     return
                 }
 
-                mediaPlayer = MediaPlayer.create(this@VideoWallpaper, fUri, VideoWallpaperSurfaceHolder(holder!!)).apply {
-                    isLooping = true
-                    setVolume(0f,0f)
+                try {
+                    mediaPlayer = MediaPlayer.create(this@VideoWallpaper, fUri, VideoWallpaperSurfaceHolder(holder!!)).apply {
+                        isLooping = true
+                        setVolume(0f,0f)
+                    }
+                } catch (e: Exception) {
+                    FirebaseCrashlytics.getInstance().recordException(e)
                 }
             } else {
                 val basePath = applicationContext.filesDir.path

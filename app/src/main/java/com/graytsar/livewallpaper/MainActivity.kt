@@ -4,8 +4,12 @@ import android.app.WallpaperManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.ImageDecoder
+import android.graphics.Movie
+import android.graphics.drawable.Drawable
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.ContextThemeWrapper
@@ -64,7 +68,6 @@ class MainActivity : AppCompatActivity() {
 
         val fUri:Uri? = resultData?.data
         if(fUri == null) {
-            showAlertError("Something went wrong.")
             return
         }
 
@@ -96,6 +99,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        if(!isVideo && !checkImage(fUri)) {
+            showAlertError("Unable to load image.")
+            return
+        }
+
         if(!checkInputStream(fUri)) {
             showAlertError("Unable to load.")
             return
@@ -124,11 +132,31 @@ class MainActivity : AppCompatActivity() {
             }
             mediaPlayer.release()
             mediaPlayer = null
-
-            //val input = contentResolver.openInputStream(fUri)
-            //input?.close()
         } catch (e:Exception) {
             logAnalyticsEvent(this, "error", "video", fUri.toString())
+            FirebaseCrashlytics.getInstance().recordException(e)
+            return false
+        }
+        return true
+    }
+
+    private fun checkImage(fUri: Uri): Boolean {
+        try {
+            if(Build.VERSION.SDK_INT >= 28){
+                var source: ImageDecoder.Source? = ImageDecoder.createSource(contentResolver, fUri)
+                var animatedImageDrawable: Drawable? = ImageDecoder.decodeDrawable(source!!)
+
+                animatedImageDrawable = null
+                source = null
+            } else {
+                var inputStream = contentResolver.openInputStream(fUri)
+                var movie = Movie.decodeStream(inputStream)
+                movie = null
+                inputStream?.close()
+                inputStream = null
+            }
+        } catch (e: Exception) {
+            logAnalyticsEvent(this, "error", "image", fUri.toString())
             FirebaseCrashlytics.getInstance().recordException(e)
             return false
         }
