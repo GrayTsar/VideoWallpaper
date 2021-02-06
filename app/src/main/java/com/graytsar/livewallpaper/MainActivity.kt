@@ -150,6 +150,7 @@ class MainActivity : AppCompatActivity() {
                 source = null
             } else {
                 var inputStream = contentResolver.openInputStream(fUri)
+                inputStream?.read()
                 var movie = Movie.decodeStream(inputStream)
                 movie = null
                 inputStream?.close()
