@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="Theme">
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="@string/keyThemeDarkMode"
+            android:title="@string/nameDarkMode" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="GIF">
+        <ListPreference
+            app:defaultValue="fit_to_screen"
+            app:entries="@array/entries_gif_scale_type"
+            app:entryValues="@array/values_gif_scale_type"
+            app:key="@string/keyGifScaleType"
+            app:title="@string/nameScaleType"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Video">
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="@string/keyVideoAudio"
+            android:title="@string/nameEnableAudio" />
+    </PreferenceCategory>
+</PreferenceScreen>

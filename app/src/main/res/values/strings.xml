@@ -1,5 +1,15 @@
 <resources>
-    <string name="app_name">Live Wallpaper - Any Video</string>
+    <string name="app_name">Raibu - Live Wallpaper - Any Video</string>
     <string name="video">Video</string>
     <string name="image">Image</string>
+
+
+
+    <string name="keyThemeDarkMode" translatable="false">keyThemeDarkMode</string>
+    <string name="keyGifScaleType" translatable="false">keyGifScaleType</string>
+    <string name="keyVideoAudio" translatable="false">keyVideoAudio</string>
+
+    <string name="nameDarkMode">Dark Mode</string>
+    <string name="nameScaleType">Scale Type</string>
+    <string name="nameEnableAudio">Enable Audio</string>
 </resources>

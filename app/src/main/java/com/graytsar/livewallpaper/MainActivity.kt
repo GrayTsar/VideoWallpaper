@@ -1,196 +1,100 @@
 package com.graytsar.livewallpaper
 
-import android.app.WallpaperManager
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.graphics.ImageDecoder
-import android.graphics.Movie
-import android.graphics.drawable.Drawable
-import android.media.MediaPlayer
-import android.net.Uri
-import android.os.Build
+import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.ContextThemeWrapper
-import android.view.View
-import androidx.appcompat.app.AlertDialog
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.crashlytics.FirebaseCrashlytics
+import android.view.*
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.widget.Toolbar
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.NavigationUI
+import androidx.preference.PreferenceManager
 import com.graytsar.livewallpaper.databinding.ActivityMainBinding
-
-const val keySharedPrefVideo = "video"
-const val keyVideo = "key"
-const val keyType = "type"
-
-const val videoFolder = "video"
-const val imageFolder = "image"
-
-const val videoName = "video"
-const val imageName = "image"
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding:ActivityMainBinding
-    private var isVideo = false
+    private lateinit var appBarConfiguration: AppBarConfiguration
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val mask = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK)
+        val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
+
+        when (mask){
+            Configuration.UI_MODE_NIGHT_YES -> {
+                SingletonStatic.isNightMode = true
+
+                val edit = sharedPref.edit()
+                edit.putBoolean(getString(R.string.keyThemeDarkMode), true)
+                edit.apply()
+            }
+            Configuration.UI_MODE_NIGHT_NO -> {
+                val c = sharedPref.getBoolean(getString(R.string.keyThemeDarkMode), valueDefaultDarkMode)
+                if(sharedPref.getBoolean(getString(R.string.keyThemeDarkMode), valueDefaultDarkMode)){
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                    SingletonStatic.isNightMode = true
+                } else {
+                    SingletonStatic.isNightMode = false
+
+                    val edit = sharedPref.edit()
+                    edit.putBoolean(getString(R.string.keyThemeDarkMode), false)
+                    edit.apply()
+                }
+            }
+            Configuration.UI_MODE_NIGHT_UNDEFINED -> {
+                SingletonStatic.isNightMode = false
+
+                val edit = sharedPref.edit()
+                edit.putBoolean(getString(R.string.keyThemeDarkMode), false)
+                edit.apply()
+            }
+        }
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.buttonImage.setOnClickListener {
-            onClickImage(it)
-        }
+        val toolbar: Toolbar = binding.includeToolbar.toolbar
+        setSupportActionBar(toolbar)
 
-        binding.buttonVideo.setOnClickListener {
-            onClickVideo(it)
-        }
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController: NavController = navHostFragment.navController
+        NavigationUI.setupActionBarWithNavController(this, navController)
+
+        appBarConfiguration = AppBarConfiguration(
+            setOf(
+                R.id.fragmentMain
+            )
+        )
     }
 
-    private fun onClickVideo(view: View){
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-        intent.addCategory(Intent.CATEGORY_OPENABLE)
-        intent.type = "video/*"
-        isVideo = true
-        startActivityForResult(intent, 1)
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+
+        return super.onCreateOptionsMenu(menu)
     }
 
-    private fun onClickImage(view: View){
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-        intent.addCategory(Intent.CATEGORY_OPENABLE)
-        intent.type = "image/*"
-        isVideo = false
-        startActivityForResult(intent, 1)
-    }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val f = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController: NavController = f.navController //for fragment switch
 
-    override fun onActivityResult(request:Int, result:Int, resultData: Intent?){
-        super.onActivityResult(request, result, resultData)
+        when(item.itemId) {
+            R.id.menuSettings -> {
+                if(f.childFragmentManager.fragments[0] is FragmentContainerSettings) {
+                    //do nothing
+                    //settings is already open
+                } else {
+                    navController.navigate(R.id.fragmentContainerSettings)
+                }
 
-        val fUri:Uri? = resultData?.data
-        if(fUri == null) {
-            return
-        }
-
-        try{
-            WallpaperManager.getInstance(applicationContext).clear()
-        } catch (e:Exception){
-            FirebaseCrashlytics.getInstance().recordException(e)
-        }
-
-        val extension = contentResolver.getType(fUri)
-        contentResolver.takePersistableUriPermission(fUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-        //problem with selecting multiple mime types. Limits how the SAF "Files" App shows stuff
-        //simply add support for non animated images like this
-        if(!isVideo && extension != "image/gif" && extension != "image/webp"){
-            try {
-                val manager:WallpaperManager = WallpaperManager.getInstance(applicationContext)
-                manager.setStream(contentResolver.openInputStream(fUri))
-                return
-            } catch (e:Exception) {
-                FirebaseCrashlytics.getInstance().recordException(e)
-                showAlertError("Something went wrong.")
-                return
+            } else -> {
+                navController.popBackStack()
             }
         }
 
-        if(isVideo && !checkVideo(fUri)) {
-            showAlertError("Unable to load video.")
-            return
-        }
-
-        if(!isVideo && !checkImage(fUri)) {
-            showAlertError("Unable to load image.")
-            return
-        }
-
-        if(!checkInputStream(fUri)) {
-            showAlertError("Unable to load.")
-            return
-        }
-
-        saveSettings(fUri, isVideo)
-
-        val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
-        intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, ComponentName(this, VideoWallpaper::class.java))
-        startActivity(intent)
-    }
-
-    private fun saveSettings(fUri:Uri, isVideo: Boolean) {
-        val sharedPref = this.getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-        editor.putString(keyVideo, fUri.toString())
-        editor.putBoolean(keyType, isVideo)
-        editor.apply()
-    }
-
-    private fun checkVideo(fUri:Uri):Boolean {
-        try {
-            var mediaPlayer = MediaPlayer.create(this, fUri).apply {
-                isLooping = true
-                setVolume(0f,0f)
-            }
-            mediaPlayer.release()
-            mediaPlayer = null
-        } catch (e:Exception) {
-            logAnalyticsEvent(this, "error", "video", fUri.toString())
-            FirebaseCrashlytics.getInstance().recordException(e)
-            return false
-        }
-        return true
-    }
-
-    private fun checkImage(fUri: Uri): Boolean {
-        try {
-            if(Build.VERSION.SDK_INT >= 28){
-                var source: ImageDecoder.Source? = ImageDecoder.createSource(contentResolver, fUri)
-                var animatedImageDrawable: Drawable? = ImageDecoder.decodeDrawable(source!!)
-
-                animatedImageDrawable = null
-                source = null
-            } else {
-                var inputStream = contentResolver.openInputStream(fUri)
-                inputStream?.read()
-                var movie = Movie.decodeStream(inputStream)
-                movie = null
-                inputStream?.close()
-                inputStream = null
-            }
-        } catch (e: Exception) {
-            logAnalyticsEvent(this, "error", "image", fUri.toString())
-            FirebaseCrashlytics.getInstance().recordException(e)
-            return false
-        }
-        return true
-    }
-
-    private fun checkInputStream(fUri: Uri):Boolean {
-        try {
-            val input = contentResolver.openInputStream(fUri)
-            input?.close()
-        } catch (e:Exception) {
-            logAnalyticsEvent(this, "error", "stream", fUri.toString())
-            FirebaseCrashlytics.getInstance().recordException(e)
-            return false
-        }
-        return true
-    }
-
-    private fun showAlertError(message:String){
-        AlertDialog.Builder(ContextThemeWrapper(this, R.style.AlertDialog))
-            .setTitle("Error")
-            .setMessage(message)
-            .setPositiveButton("OK") { _, _ ->
-
-            }
-            .show()
-    }
-
-    private fun logAnalyticsEvent(context: Context?, event:String, param:String, value:String){
-        context?.let {
-            val bundle = Bundle()
-            bundle.putString(param, value)
-            FirebaseAnalytics.getInstance(it).logEvent(event , bundle)
-        }
+        return super.onOptionsItemSelected(item)
     }
 }

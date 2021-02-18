@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="entries_gif_scale_type">
+        <item>Fit to Screen</item>
+        <item>Center</item>
+        <item>Original</item>
+    </string-array>
+
+    <string-array name="values_gif_scale_type">
+        <item>fit_to_screen</item>
+        <item>center</item>
+        <item>original</item>
+    </string-array>
+
+    <string-array name="entries_video_audio">
+        <item>Allow Audio</item>
+        <item>No Audio</item>
+    </string-array>
+
+    <string-array name="values_video_audio">
+        <item>true</item>
+        <item>false</item>
+    </string-array>
+</resources>

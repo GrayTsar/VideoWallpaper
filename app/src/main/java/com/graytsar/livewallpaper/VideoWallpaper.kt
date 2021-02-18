@@ -12,6 +12,7 @@ import android.service.wallpaper.WallpaperService
 import android.view.Surface
 import android.view.SurfaceHolder
 import androidx.core.net.toUri
+import androidx.preference.PreferenceManager
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import java.io.File
@@ -19,6 +20,8 @@ import java.io.FileOutputStream
 import kotlin.Exception
 
 class VideoWallpaper:WallpaperService() {
+    private var settingsAudio: Boolean = false
+    private var settingsScaleType: String = ""
 
     override fun onCreate() {
         super.onCreate()
@@ -28,6 +31,12 @@ class VideoWallpaper:WallpaperService() {
     override fun onCreateEngine(): Engine {
         val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
         val isVideo = sharedPref.getBoolean(keyType, false)
+
+        val settingsSP = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+
+        settingsScaleType = settingsSP.getString(getString(R.string.keyGifScaleType), valueDefaultScaleType)!!
+        settingsAudio = settingsSP.getBoolean(getString(R.string.keyVideoAudio), valueDefaultVideoAudio)
+
 
         return if(isVideo) {
             VideoWallpaperEngine()
@@ -61,7 +70,6 @@ class VideoWallpaper:WallpaperService() {
             } catch (e: NullPointerException) {
                 FirebaseCrashlytics.getInstance().recordException(e)
             }
-
 
             if(isPreview) {
                 if(fUri == null) {
@@ -117,7 +125,7 @@ class VideoWallpaper:WallpaperService() {
                 }
             }
 
-            drawJob = startJob()
+            drawJob = getDrawJob()
         }
 
         override fun onVisibilityChanged(visible: Boolean) {
@@ -132,7 +140,7 @@ class VideoWallpaper:WallpaperService() {
                     }
                 }
                 shouldDraw = true
-                drawJob = startJob()
+                drawJob = getDrawJob()
             } else {
                 if(Build.VERSION.SDK_INT >= 28){
                     if(animatedImageDrawable is AnimatedImageDrawable){
@@ -159,7 +167,7 @@ class VideoWallpaper:WallpaperService() {
             clearImage()
         }
 
-        private fun startJob(): Job {
+        private fun startDrawOriginal(): Job {
             return GlobalScope.launch {
                 try{
                     while(holderInstance != null && holderInstance!!.surface.isValid && shouldDraw){
@@ -167,8 +175,75 @@ class VideoWallpaper:WallpaperService() {
 
                         if(Build.VERSION.SDK_INT >= 28){
                             animatedImageDrawable?.let { animatedImageDrawable ->
-                                val sx = canvas!!.width.toFloat() / animatedImageDrawable.intrinsicWidth.toFloat()
-                                val sy = canvas.height.toFloat() / animatedImageDrawable.intrinsicHeight.toFloat()
+                                animatedImageDrawable.draw(canvas!!)
+                            }
+                        } else {
+                            movie?.let { movie ->
+                                movie.draw(canvas!!, 0f, 0f)
+                                movie.setTime((System.currentTimeMillis() % movie.duration()).toInt())
+                            }
+                        }
+                        holderInstance?.unlockCanvasAndPost(canvas!!)
+                        delay(7)
+                    }
+                } catch (e:Exception){
+                    FirebaseCrashlytics.getInstance().recordException(e)
+                }
+            }
+        }
+
+        private fun startDrawCenter(): Job {
+            return GlobalScope.launch {
+                try{
+                    while(holderInstance != null && holderInstance!!.surface.isValid && shouldDraw){
+                        val canvas = holderInstance?.lockCanvas()
+
+                        if(Build.VERSION.SDK_INT >= 28){
+                            animatedImageDrawable?.let { animatedImageDrawable ->
+                                val sx: Float = (canvas!!.width.toFloat() - animatedImageDrawable.intrinsicWidth.toFloat()) / 2
+                                val sy: Float = (canvas.height.toFloat() - animatedImageDrawable.intrinsicHeight.toFloat()) / 2
+
+                                canvas.translate(sx, sy)
+                                animatedImageDrawable.draw(canvas)
+                            }
+                        } else {
+                            movie?.let { movie ->
+                                val sx: Float = (canvas!!.width.toFloat() / movie.width().toFloat()) / 2
+                                val sy: Float = (canvas.height.toFloat() / movie.height().toFloat()) / 2
+
+                                movie.draw(canvas, sx, sy)
+                                movie.setTime((System.currentTimeMillis() % movie.duration()).toInt())
+                            }
+                        }
+                        holderInstance?.unlockCanvasAndPost(canvas!!)
+                        delay(7)
+                    }
+                } catch (e:Exception){
+                    FirebaseCrashlytics.getInstance().recordException(e)
+                }
+            }
+        }
+
+        private fun startDrawFit(): Job {
+            return GlobalScope.launch {
+                try{
+                    while(holderInstance != null && holderInstance!!.surface.isValid && shouldDraw){
+                        val canvas = holderInstance?.lockCanvas()
+
+                        if(Build.VERSION.SDK_INT >= 28){
+                            animatedImageDrawable?.let { animatedImageDrawable ->
+                                var ax:Float = animatedImageDrawable.intrinsicWidth.toFloat()
+                                var ay:Float = animatedImageDrawable.intrinsicHeight.toFloat()
+
+                                if(ax <= 0) {
+                                    ax = 1.0f
+                                }
+                                if(ay <= 0) {
+                                    ay = 1.0f
+                                }
+
+                                val sx = canvas!!.width.toFloat() / ax
+                                val sy = canvas.height.toFloat() / ay
 
                                 canvas.scale(sx, sy)
                                 animatedImageDrawable.draw(canvas)
@@ -185,10 +260,27 @@ class VideoWallpaper:WallpaperService() {
                             }
                         }
                         holderInstance?.unlockCanvasAndPost(canvas!!)
-                        delay(15)
+                        delay(7)
                     }
                 } catch (e:Exception){
                     FirebaseCrashlytics.getInstance().recordException(e)
+                }
+            }
+        }
+
+        private fun getDrawJob(): Job {
+            return when (settingsScaleType) {
+                valueDefaultScaleType -> {
+                    startDrawFit()
+                }
+                "center" -> {
+                    startDrawCenter()
+                }
+                "original" -> {
+                    startDrawOriginal()
+                }
+                else -> {
+                    startDrawFit()
                 }
             }
         }
@@ -232,10 +324,13 @@ class VideoWallpaper:WallpaperService() {
                 }
 
                 try {
-                    mediaPlayer = MediaPlayer.create(this@VideoWallpaper, fUri, VideoWallpaperSurfaceHolder(holder!!)).apply {
-                        isLooping = true
-                        setVolume(0f,0f)
+                    mediaPlayer = MediaPlayer.create(this@VideoWallpaper, fUri, VideoWallpaperSurfaceHolder(holder!!))
+                    mediaPlayer?.isLooping = true
+
+                    if(!settingsAudio) {
+                        mediaPlayer?.setVolume(0.0f, 0.0f)
                     }
+
                 } catch (e: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
@@ -264,9 +359,10 @@ class VideoWallpaper:WallpaperService() {
 
                 val file = File("${applicationContext.filesDir.path}/$videoFolder").listFiles()
                 if(file.isNotEmpty() && file[0].exists()) {
-                    mediaPlayer = MediaPlayer.create(this@VideoWallpaper, file[0].toUri(), VideoWallpaperSurfaceHolder(holder!!)).apply {
-                        isLooping = true
-                        setVolume(0f,0f)
+                    mediaPlayer = MediaPlayer.create(this@VideoWallpaper, file[0].toUri(), VideoWallpaperSurfaceHolder(holder!!))
+                    mediaPlayer?.isLooping = true
+                    if(!settingsAudio) {
+                        mediaPlayer?.setVolume(0.0f, 0.0f)
                     }
                 }
             }

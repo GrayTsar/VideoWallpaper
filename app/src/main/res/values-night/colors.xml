@@ -4,9 +4,8 @@
     <color name="colorPrimaryDark">#ab000d</color>
     <color name="colorAccent">#e53935</color>
 
-    <color name="menuTextColorPrimary">#121212</color>
-    <color name="menuBackground">#fafafa</color>
+    <color name="menuTextColorPrimary">#fafafa</color>
+    <color name="menuBackground">#212121</color>
 
     <color name="colorBackground">#121212</color>
-
 </resources>

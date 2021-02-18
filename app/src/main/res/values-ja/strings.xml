@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ライブ 壁紙 - 任意の ビデオ</string>
+    <string name="app_name">Raibu - ライブ 壁紙 - 任意の ビデオ</string>
     <string name="video">ビデオ</string>
     <string name="image">イメージ</string>
+
+    <string name="nameDarkMode">Dark Mode</string>
+    <string name="nameScaleType">Scale Type</string>
+    <string name="nameEnableAudio">Enable Audio</string>
 </resources>

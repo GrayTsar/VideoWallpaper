@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Live Wallpaper - Any Video</string>
+    <string name="app_name">Raibu - Live Wallpaper - Any Video</string>
     <string name="video">видео</string>
     <string name="image">фото</string>
+
+    <string name="nameDarkMode">Dark Mode</string>
+    <string name="nameScaleType">Scale Type</string>
+    <string name="nameEnableAudio">Enable Audio</string>
 </resources>
