@@ -55,7 +55,13 @@ class FragmentMain: Fragment() {
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.type = "video/*"
         isVideo = true
-        startActivityForResult(intent, 1)
+
+        try {
+            startActivityForResult(intent, 1)
+        } catch (e: Exception) {
+            showAlertError("No File Manager found. Please install \"Files by Google\" or a similar File Manager")
+            FirebaseCrashlytics.getInstance().recordException(e)
+        }
     }
 
     private fun onClickImage(view: View){
@@ -63,7 +69,13 @@ class FragmentMain: Fragment() {
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.type = "image/*"
         isVideo = false
-        startActivityForResult(intent, 1)
+
+        try {
+            startActivityForResult(intent, 1)
+        } catch (e: Exception) {
+            showAlertError("No File Manager found. Please install \"Files by Google\" or a similar File Manager")
+            FirebaseCrashlytics.getInstance().recordException(e)
+        }
     }
 
     override fun onActivityResult(request:Int, result:Int, resultData: Intent?){
@@ -83,7 +95,12 @@ class FragmentMain: Fragment() {
                 }
 
                 val extension = context.contentResolver.getType(fUri)
-                context.contentResolver.takePersistableUriPermission(fUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+                try {
+                    context.contentResolver.takePersistableUriPermission(fUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                } catch (e:Exception) {
+                    FirebaseCrashlytics.getInstance().recordException(e)
+                }
 
                 //problem with selecting multiple mime types. Limits how the SAF "Files" App shows stuff
                 //simply add support for non animated images like this
@@ -118,9 +135,19 @@ class FragmentMain: Fragment() {
 
                 val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
                 intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, ComponentName(context, VideoWallpaper::class.java))
-                startActivity(intent)
 
-
+                try {
+                    startActivity(intent)
+                } catch (e1:Exception) {
+                    FirebaseCrashlytics.getInstance().recordException(e1)
+                    try {
+                        startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    } catch (e2:Exception) {
+                        FirebaseCrashlytics.getInstance().recordException(e2)
+                        showAlertError("Can not show Live Wallpaper on this device.")
+                    }
+                }
             }
         }
     }
@@ -201,10 +228,13 @@ class FragmentMain: Fragment() {
     }
 
     private fun logAnalyticsEvent(context: Context?, event:String, param:String, value:String){
+        /*
         context?.let {
             val bundle = Bundle()
             bundle.putString(param, value)
             FirebaseAnalytics.getInstance(it).logEvent(event , bundle)
         }
+
+         */
     }
 }

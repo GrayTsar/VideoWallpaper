@@ -14,8 +14,8 @@ android {
         applicationId "com.graytsar.livewallpaper"
         minSdkVersion 19
         targetSdkVersion 30
-        versionCode 9
-        versionName "1.0.8"
+        versionCode 10
+        versionName "1.0.9"
 
         vectorDrawables.useSupportLibrary = true
 

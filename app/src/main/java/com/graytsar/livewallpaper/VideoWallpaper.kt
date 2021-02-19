@@ -357,7 +357,7 @@ class VideoWallpaper:WallpaperService() {
                 }
 
 
-                val file = File("${applicationContext.filesDir.path}/$videoFolder").listFiles()
+                val file = File("$basePath/$videoFolder").listFiles()
                 if(file.isNotEmpty() && file[0].exists()) {
                     mediaPlayer = MediaPlayer.create(this@VideoWallpaper, file[0].toUri(), VideoWallpaperSurfaceHolder(holder!!))
                     mediaPlayer?.isLooping = true
