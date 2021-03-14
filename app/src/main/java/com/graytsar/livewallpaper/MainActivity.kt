@@ -11,6 +11,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.preference.PreferenceManager
+import com.google.android.gms.ads.MobileAds
 import com.graytsar.livewallpaper.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -67,6 +68,12 @@ class MainActivity : AppCompatActivity() {
                 R.id.fragmentMain
             )
         )
+
+        try {
+            MobileAds.initialize(this)
+        } catch (e:Exception) {
+
+        }
     }
 
 

@@ -23,6 +23,10 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3755903324390917~9798809642"/>
+
         <service
             android:name=".VideoWallpaper"
             android:enabled="true"
