@@ -26,5 +26,24 @@
             android:defaultValue="false"
             android:key="@string/keyVideoAudio"
             android:title="@string/nameEnableAudio" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="@string/keyCropVideo"
+            android:title="@string/nameCropVideo" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="All">
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="@string/keyDoubleTapToPause"
+            android:title="@string/nameDoubleTapToPause" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="@string/keyPlayOffscreen"
+            android:title="@string/namePlayOffscreen"
+            android:summary="@string/summaryPlayOffscreen"/>
     </PreferenceCategory>
 </PreferenceScreen>
