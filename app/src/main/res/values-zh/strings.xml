@@ -7,4 +7,8 @@
     <string name="nameDarkMode">Dark Mode</string>
     <string name="nameScaleType">Scale Type</string>
     <string name="nameEnableAudio">Enable Audio</string>
+    <string name="nameDoubleTapToPause" >Double Tap to Pause</string>
+    <string name="namePlayOffscreen">Play Offscreen</string>
+    <string name="summaryPlayOffscreen">Play when not visible or screen is off</string>
+    <string name="nameCropVideo">Crop Video</string>
 </resources>

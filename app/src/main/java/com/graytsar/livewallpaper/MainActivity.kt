@@ -32,7 +32,6 @@ class MainActivity : AppCompatActivity() {
                 edit.apply()
             }
             Configuration.UI_MODE_NIGHT_NO -> {
-                val c = sharedPref.getBoolean(getString(R.string.keyThemeDarkMode), valueDefaultDarkMode)
                 if(sharedPref.getBoolean(getString(R.string.keyThemeDarkMode), valueDefaultDarkMode)){
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
                     SingletonStatic.isNightMode = true

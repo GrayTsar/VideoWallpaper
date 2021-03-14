@@ -18,7 +18,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.graytsar.livewallpaper.databinding.FragmentMainBinding
 
@@ -35,7 +34,7 @@ class FragmentMain: Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FragmentMainBinding.inflate(inflater, container, false)
 
         binding.buttonImage.setOnClickListener {

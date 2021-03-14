@@ -5,14 +5,10 @@ import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.Drawable
-import android.hardware.display.DisplayManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
-import android.os.PowerManager
 import android.service.wallpaper.WallpaperService
-import android.util.Log
-import android.view.Display
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -362,6 +358,7 @@ class VideoWallpaper:WallpaperService() {
             drawJob = null
         }
 
+        /*
         private fun getScreenStateOff(): Boolean {
             val displayManager:DisplayManager = applicationContext.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
             var screenOff = false
@@ -386,6 +383,8 @@ class VideoWallpaper:WallpaperService() {
 
             return screenOff
         }
+
+         */
     }
 
     inner class VideoWallpaperEngine:Engine() {
