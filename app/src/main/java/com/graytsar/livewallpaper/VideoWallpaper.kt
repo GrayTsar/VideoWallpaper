@@ -21,7 +21,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 @DelicateCoroutinesApi
-class VideoWallpaper:WallpaperService() {
+class VideoWallpaper : WallpaperService() {
     private var settingsAudio: Boolean = false
     private var settingsVideoCrop: Boolean = false
     private var settingsScaleType: String = ""
@@ -39,16 +39,23 @@ class VideoWallpaper:WallpaperService() {
 
         val settingsSP = PreferenceManager.getDefaultSharedPreferences(applicationContext)
 
-        settingsScaleType = settingsSP.getString(getString(R.string.keyGifScaleType),valueDefaultScaleType)!!
-        settingsAudio = settingsSP.getBoolean(getString(R.string.keyVideoAudio), valueDefaultVideoAudio)
-        settingsDoubleTapToPause = settingsSP.getBoolean(getString(R.string.keyDoubleTapToPause), valueDefaultDoubleTapToPause)
-        settingsPlayOffscreen = settingsSP.getBoolean(getString(R.string.keyPlayOffscreen), valueDefaultPlayOffscreen)
-        settingsVideoCrop = settingsSP.getBoolean(getString(R.string.keyCropVideo), valueDefaultVideoCrop)
+        settingsScaleType =
+            settingsSP.getString(getString(R.string.keyGifScaleType), valueDefaultScaleType)!!
+        settingsAudio =
+            settingsSP.getBoolean(getString(R.string.keyVideoAudio), valueDefaultVideoAudio)
+        settingsDoubleTapToPause = settingsSP.getBoolean(
+            getString(R.string.keyDoubleTapToPause),
+            valueDefaultDoubleTapToPause
+        )
+        settingsPlayOffscreen =
+            settingsSP.getBoolean(getString(R.string.keyPlayOffscreen), valueDefaultPlayOffscreen)
+        settingsVideoCrop =
+            settingsSP.getBoolean(getString(R.string.keyCropVideo), valueDefaultVideoCrop)
 
-        return if(isVideo) {
+        return if (isVideo) {
             VideoWallpaperEngine()
         } else {
-            if(Build.VERSION.SDK_INT >= 28){
+            if (Build.VERSION.SDK_INT >= 28) {
                 ImageWallpaperEngineApi28()
             } else {
                 ImageWallpaperEngineApi19()
@@ -58,15 +65,15 @@ class VideoWallpaper:WallpaperService() {
     }
 
     @RequiresApi(Build.VERSION_CODES.P)
-    inner class ImageWallpaperEngineApi28:Engine() {
+    inner class ImageWallpaperEngineApi28 : Engine() {
         private var animatedImageDrawable: Drawable? = null
 
         private var holderInstance: SurfaceHolder? = null
         private var drawJob: Job? = null
 
-        private var shouldDraw:Boolean = true
+        private var shouldDraw: Boolean = true
         private var tapTimeBetween: Long = 0L
-        private var isPaused:Boolean = false
+        private var isPaused: Boolean = false
 
 
         override fun onSurfaceCreated(holder: SurfaceHolder?) {
@@ -82,15 +89,15 @@ class VideoWallpaper:WallpaperService() {
                 FirebaseCrashlytics.getInstance().recordException(e)
             }
 
-            if(isPreview) {
-                if(fUri == null) {
+            if (isPreview) {
+                if (fUri == null) {
                     return
                 }
 
                 val source = ImageDecoder.createSource(contentResolver, fUri)
                 animatedImageDrawable = ImageDecoder.decodeDrawable(source)
 
-                if(animatedImageDrawable is AnimatedImageDrawable){
+                if (animatedImageDrawable is AnimatedImageDrawable) {
                     val anim = animatedImageDrawable as AnimatedImageDrawable
                     anim.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
                     anim.start()
@@ -101,7 +108,7 @@ class VideoWallpaper:WallpaperService() {
 
                 //create directories if they do not exist
                 val directory = File("$basePath/$folder")
-                if(!directory.isDirectory){
+                if (!directory.isDirectory) {
                     directory.mkdirs()
                 }
 
@@ -120,7 +127,7 @@ class VideoWallpaper:WallpaperService() {
                 val source = ImageDecoder.createSource(File("$basePath/$folder/$imageName"))
                 animatedImageDrawable = ImageDecoder.decodeDrawable(source)
 
-                if(animatedImageDrawable is AnimatedImageDrawable){
+                if (animatedImageDrawable is AnimatedImageDrawable) {
                     val anim = animatedImageDrawable as AnimatedImageDrawable
                     anim.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
                     anim.start()
@@ -133,15 +140,15 @@ class VideoWallpaper:WallpaperService() {
         override fun onVisibilityChanged(visible: Boolean) {
             super.onVisibilityChanged(visible)
 
-            if(visible) {
-                if(animatedImageDrawable is AnimatedImageDrawable){
+            if (visible) {
+                if (animatedImageDrawable is AnimatedImageDrawable) {
                     val anim = animatedImageDrawable as AnimatedImageDrawable
                     anim.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
                     anim.start()
                 }
 
-                if(settingsPlayOffscreen) {
-                    if(drawJob == null) {
+                if (settingsPlayOffscreen) {
+                    if (drawJob == null) {
                         shouldDraw = true
                         drawJob = getDrawJob()
                     }
@@ -150,12 +157,12 @@ class VideoWallpaper:WallpaperService() {
                     drawJob = getDrawJob()
                 }
             } else {
-                if(animatedImageDrawable is AnimatedImageDrawable){
+                if (animatedImageDrawable is AnimatedImageDrawable) {
                     val anim = animatedImageDrawable as AnimatedImageDrawable
                     anim.stop()
                 }
 
-                if(!settingsPlayOffscreen) {
+                if (!settingsPlayOffscreen) {
                     shouldDraw = false
                     drawJob?.cancel()
                     drawJob = null
@@ -169,8 +176,8 @@ class VideoWallpaper:WallpaperService() {
         }
 
         override fun onTouchEvent(event: MotionEvent?) {
-            if(settingsDoubleTapToPause) {
-                when(event?.actionMasked) {
+            if (settingsDoubleTapToPause) {
+                when (event?.actionMasked) {
                     MotionEvent.ACTION_DOWN -> {
                         val currentTime = System.currentTimeMillis()
                         if (currentTime - tapTimeBetween <= doubleTapTimeout) {
@@ -191,16 +198,16 @@ class VideoWallpaper:WallpaperService() {
 
         private fun startDrawOriginal(): Job {
             return GlobalScope.launch {
-                try{
-                    while(holderInstance != null && holderInstance!!.surface.isValid && shouldDraw){
-                        if(!isPaused) {
+                try {
+                    while (holderInstance != null && holderInstance!!.surface.isValid && shouldDraw) {
+                        if (!isPaused) {
                             val canvas = holderInstance?.lockCanvas()
                             animatedImageDrawable?.draw(canvas!!)
                             holderInstance?.unlockCanvasAndPost(canvas!!)
                         }
                         delay(7)
                     }
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
             }
@@ -208,14 +215,16 @@ class VideoWallpaper:WallpaperService() {
 
         private fun startDrawCenter(): Job {
             return GlobalScope.launch {
-                try{
-                    while(holderInstance != null && holderInstance!!.surface.isValid && shouldDraw){
-                        if(!isPaused) {
+                try {
+                    while (holderInstance != null && holderInstance!!.surface.isValid && shouldDraw) {
+                        if (!isPaused) {
                             val canvas = holderInstance?.lockCanvas()
 
                             animatedImageDrawable?.let { animatedImageDrawable ->
-                                val sx: Float = (canvas!!.width.toFloat() - animatedImageDrawable.intrinsicWidth.toFloat()) / 2
-                                val sy: Float = (canvas.height.toFloat() - animatedImageDrawable.intrinsicHeight.toFloat()) / 2
+                                val sx: Float =
+                                    (canvas!!.width.toFloat() - animatedImageDrawable.intrinsicWidth.toFloat()) / 2
+                                val sy: Float =
+                                    (canvas.height.toFloat() - animatedImageDrawable.intrinsicHeight.toFloat()) / 2
 
                                 canvas.translate(sx, sy)
                                 animatedImageDrawable.draw(canvas)
@@ -224,7 +233,7 @@ class VideoWallpaper:WallpaperService() {
                         }
                         delay(7)
                     }
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
             }
@@ -232,19 +241,19 @@ class VideoWallpaper:WallpaperService() {
 
         private fun startDrawFit(): Job {
             return GlobalScope.launch {
-                try{
-                    while(holderInstance != null && holderInstance!!.surface.isValid && shouldDraw){
-                        if(!isPaused) {
+                try {
+                    while (holderInstance != null && holderInstance!!.surface.isValid && shouldDraw) {
+                        if (!isPaused) {
                             val canvas = holderInstance?.lockCanvas()
 
                             animatedImageDrawable?.let { animatedImageDrawable ->
-                                var ax:Float = animatedImageDrawable.intrinsicWidth.toFloat()
-                                var ay:Float = animatedImageDrawable.intrinsicHeight.toFloat()
+                                var ax: Float = animatedImageDrawable.intrinsicWidth.toFloat()
+                                var ay: Float = animatedImageDrawable.intrinsicHeight.toFloat()
 
-                                if(ax <= 0) {
+                                if (ax <= 0) {
                                     ax = 1.0f
                                 }
-                                if(ay <= 0) {
+                                if (ay <= 0) {
                                     ay = 1.0f
                                 }
 
@@ -258,7 +267,7 @@ class VideoWallpaper:WallpaperService() {
                         }
                         delay(7)
                     }
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
             }
@@ -269,12 +278,15 @@ class VideoWallpaper:WallpaperService() {
                 valueDefaultScaleType -> {
                     startDrawFit()
                 }
+
                 "center" -> {
                     startDrawCenter()
                 }
+
                 "original" -> {
                     startDrawOriginal()
                 }
+
                 else -> {
                     startDrawFit()
                 }
@@ -282,7 +294,7 @@ class VideoWallpaper:WallpaperService() {
         }
 
         private fun clearImage() {
-            if(animatedImageDrawable is AnimatedImageDrawable) {
+            if (animatedImageDrawable is AnimatedImageDrawable) {
                 (animatedImageDrawable as AnimatedImageDrawable).stop()
             }
 
@@ -292,15 +304,15 @@ class VideoWallpaper:WallpaperService() {
         }
     }
 
-    inner class ImageWallpaperEngineApi19:Engine() {
+    inner class ImageWallpaperEngineApi19 : Engine() {
         private var movie: Movie? = null
 
         private var holderInstance: SurfaceHolder? = null
         private var drawJob: Job? = null
 
-        private var shouldDraw:Boolean = true
+        private var shouldDraw: Boolean = true
         private var tapTimeBetween: Long = 0L
-        private var isPaused:Boolean = false
+        private var isPaused: Boolean = false
 
         override fun onSurfaceCreated(holder: SurfaceHolder?) {
             super.onSurfaceCreated(holder)
@@ -315,8 +327,8 @@ class VideoWallpaper:WallpaperService() {
                 FirebaseCrashlytics.getInstance().recordException(e)
             }
 
-            if(isPreview) {
-                if(fUri == null)
+            if (isPreview) {
+                if (fUri == null)
                     return
 
                 movie = Movie.decodeStream(contentResolver.openInputStream(fUri))
@@ -326,7 +338,7 @@ class VideoWallpaper:WallpaperService() {
 
                 //create directories if they do not exist
                 val directory = File("$basePath/$folder")
-                if(!directory.isDirectory){
+                if (!directory.isDirectory) {
                     directory.mkdirs()
                 }
 
@@ -351,9 +363,9 @@ class VideoWallpaper:WallpaperService() {
         override fun onVisibilityChanged(visible: Boolean) {
             super.onVisibilityChanged(visible)
 
-            if(visible) {
-                if(settingsPlayOffscreen) {
-                    if(drawJob == null) {
+            if (visible) {
+                if (settingsPlayOffscreen) {
+                    if (drawJob == null) {
                         shouldDraw = true
                         drawJob = getDrawJob()
                     }
@@ -362,7 +374,7 @@ class VideoWallpaper:WallpaperService() {
                     drawJob = getDrawJob()
                 }
             } else {
-                if(!settingsPlayOffscreen) {
+                if (!settingsPlayOffscreen) {
                     shouldDraw = false
                     drawJob?.cancel()
                     drawJob = null
@@ -376,8 +388,8 @@ class VideoWallpaper:WallpaperService() {
         }
 
         override fun onTouchEvent(event: MotionEvent?) {
-            if(settingsDoubleTapToPause) {
-                when(event?.actionMasked) {
+            if (settingsDoubleTapToPause) {
+                when (event?.actionMasked) {
                     MotionEvent.ACTION_DOWN -> {
                         val currentTime = System.currentTimeMillis()
                         if (currentTime - tapTimeBetween <= doubleTapTimeout) {
@@ -398,9 +410,9 @@ class VideoWallpaper:WallpaperService() {
 
         private fun startDrawOriginal(): Job {
             return GlobalScope.launch {
-                try{
-                    while(holderInstance != null && holderInstance!!.surface.isValid && shouldDraw){
-                        if(!isPaused) {
+                try {
+                    while (holderInstance != null && holderInstance!!.surface.isValid && shouldDraw) {
+                        if (!isPaused) {
                             val canvas = holderInstance?.lockCanvas()
 
                             movie?.let { movie ->
@@ -412,7 +424,7 @@ class VideoWallpaper:WallpaperService() {
                         }
                         delay(7)
                     }
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
             }
@@ -420,14 +432,16 @@ class VideoWallpaper:WallpaperService() {
 
         private fun startDrawCenter(): Job {
             return GlobalScope.launch {
-                try{
-                    while(holderInstance != null && holderInstance!!.surface.isValid && shouldDraw){
-                        if(!isPaused) {
+                try {
+                    while (holderInstance != null && holderInstance!!.surface.isValid && shouldDraw) {
+                        if (!isPaused) {
                             val canvas = holderInstance?.lockCanvas()
 
                             movie?.let { movie ->
-                                val sx: Float = (canvas!!.width.toFloat() / movie.width().toFloat()) / 2
-                                val sy: Float = (canvas.height.toFloat() / movie.height().toFloat()) / 2
+                                val sx: Float =
+                                    (canvas!!.width.toFloat() / movie.width().toFloat()) / 2
+                                val sy: Float =
+                                    (canvas.height.toFloat() / movie.height().toFloat()) / 2
 
                                 movie.draw(canvas, sx, sy)
                                 movie.setTime((System.currentTimeMillis() % movie.duration()).toInt())
@@ -436,7 +450,7 @@ class VideoWallpaper:WallpaperService() {
                         }
                         delay(7)
                     }
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
             }
@@ -444,9 +458,9 @@ class VideoWallpaper:WallpaperService() {
 
         private fun startDrawFit(): Job {
             return GlobalScope.launch {
-                try{
-                    while(holderInstance != null && holderInstance!!.surface.isValid && shouldDraw){
-                        if(!isPaused) {
+                try {
+                    while (holderInstance != null && holderInstance!!.surface.isValid && shouldDraw) {
+                        if (!isPaused) {
                             val canvas = holderInstance?.lockCanvas()
 
                             movie?.let { movie ->
@@ -462,7 +476,7 @@ class VideoWallpaper:WallpaperService() {
                         }
                         delay(7)
                     }
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
             }
@@ -473,12 +487,15 @@ class VideoWallpaper:WallpaperService() {
                 valueDefaultScaleType -> {
                     startDrawFit()
                 }
+
                 "center" -> {
                     startDrawCenter()
                 }
+
                 "original" -> {
                     startDrawOriginal()
                 }
+
                 else -> {
                     startDrawFit()
                 }
@@ -493,12 +510,11 @@ class VideoWallpaper:WallpaperService() {
     }
 
 
-
-    inner class VideoWallpaperEngine:Engine() {
+    inner class VideoWallpaperEngine : Engine() {
         var mediaPlayer: MediaPlayer? = null
 
         private var tapTimeBetween: Long = 0L
-        private var isPaused:Boolean = false
+        private var isPaused: Boolean = false
 
         override fun onCreate(surfaceHolder: SurfaceHolder?) {
             super.onCreate(surfaceHolder)
@@ -518,20 +534,24 @@ class VideoWallpaper:WallpaperService() {
             }
 
 
-            if(isPreview) {
-                if(fUri == null) {
+            if (isPreview) {
+                if (fUri == null) {
                     return
                 }
 
                 try {
-                    mediaPlayer = MediaPlayer.create(this@VideoWallpaper, fUri, VideoWallpaperSurfaceHolder(holder!!))
+                    mediaPlayer = MediaPlayer.create(
+                        this@VideoWallpaper,
+                        fUri,
+                        VideoWallpaperSurfaceHolder(holder!!)
+                    )
                     mediaPlayer?.isLooping = true
 
-                    if(settingsVideoCrop) {
+                    if (settingsVideoCrop) {
                         mediaPlayer?.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
                     }
 
-                    if(!settingsAudio) {
+                    if (!settingsAudio) {
                         mediaPlayer?.setVolume(0.0f, 0.0f)
                     }
                 } catch (e: Exception) {
@@ -543,7 +563,7 @@ class VideoWallpaper:WallpaperService() {
 
                 //create directories if they do not exist
                 val directory = File("$basePath/$folder")
-                if(!directory.isDirectory){
+                if (!directory.isDirectory) {
                     directory.mkdirs()
                 }
 
@@ -561,15 +581,19 @@ class VideoWallpaper:WallpaperService() {
 
 
                 val file = File("$basePath/$videoFolder").listFiles()
-                if(file != null && file.isNotEmpty() && file[0].exists()) {
-                    mediaPlayer = MediaPlayer.create(this@VideoWallpaper, file[0].toUri(), VideoWallpaperSurfaceHolder(holder!!))
+                if (file != null && file.isNotEmpty() && file[0].exists()) {
+                    mediaPlayer = MediaPlayer.create(
+                        this@VideoWallpaper,
+                        file[0].toUri(),
+                        VideoWallpaperSurfaceHolder(holder!!)
+                    )
                     mediaPlayer?.isLooping = true
 
-                    if(settingsVideoCrop) {
+                    if (settingsVideoCrop) {
                         mediaPlayer?.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
                     }
 
-                    if(!settingsAudio) {
+                    if (!settingsAudio) {
                         mediaPlayer?.setVolume(0.0f, 0.0f)
                     }
                 }
@@ -579,14 +603,14 @@ class VideoWallpaper:WallpaperService() {
         override fun onVisibilityChanged(visible: Boolean) {
             super.onVisibilityChanged(visible)
 
-            if(!settingsPlayOffscreen) {
-                if(!isPaused && visible) {
+            if (!settingsPlayOffscreen) {
+                if (!isPaused && visible) {
                     mediaPlayer?.start()
                 } else {
                     mediaPlayer?.pause()
                 }
             } else {
-                if(isPaused) {
+                if (isPaused) {
                     mediaPlayer?.pause()
                 } else {
                     mediaPlayer?.start()
@@ -622,13 +646,13 @@ class VideoWallpaper:WallpaperService() {
         }
 
         override fun onTouchEvent(event: MotionEvent?) {
-            if(settingsDoubleTapToPause) {
-                when(event?.actionMasked) {
+            if (settingsDoubleTapToPause) {
+                when (event?.actionMasked) {
                     MotionEvent.ACTION_DOWN -> {
                         val currentTime = System.currentTimeMillis()
                         if (currentTime - tapTimeBetween <= doubleTapTimeout) {
                             isPaused = !isPaused
-                            if(isPaused) {
+                            if (isPaused) {
                                 mediaPlayer?.pause()
                             } else {
                                 mediaPlayer?.start()
@@ -653,10 +677,10 @@ class VideoWallpaper:WallpaperService() {
         }
     }
 
-    private class VideoWallpaperSurfaceHolder(private val holder: SurfaceHolder):SurfaceHolder{
+    private class VideoWallpaperSurfaceHolder(private val holder: SurfaceHolder) : SurfaceHolder {
         @SuppressLint("ObsoleteSdkInt")
         override fun setType(type: Int) {
-            if(Build.VERSION.SDK_INT <= 11) {
+            if (Build.VERSION.SDK_INT <= 11) {
                 holder.setType(type)
             }
         }

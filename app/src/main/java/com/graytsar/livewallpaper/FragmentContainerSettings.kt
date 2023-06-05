@@ -1,10 +1,10 @@
 package com.graytsar.livewallpaper
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 
 class FragmentContainerSettings : Fragment() {
 
@@ -12,10 +12,7 @@ class FragmentContainerSettings : Fragment() {
         super.onCreate(savedInstanceState)
         requireActivity().supportFragmentManager
             .beginTransaction()
-            .replace(
-                R.id.settings,
-                FragmentSettings()
-            )
+            .replace(R.id.settings, FragmentSettings())
             .commit()
     }
 
@@ -23,9 +20,6 @@ class FragmentContainerSettings : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
-
-
         return inflater.inflate(R.layout.fragment_container_settings, container, false)
     }
 

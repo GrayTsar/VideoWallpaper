@@ -16,12 +16,13 @@ class FragmentSettings: PreferenceFragmentCompat() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        preferenceDarkMode = preferenceManager.findPreference<CheckBoxPreference>(getString(R.string.keyThemeDarkMode))!!
+    ): View {
+        preferenceDarkMode =
+            preferenceManager.findPreference<CheckBoxPreference>(getString(R.string.keyThemeDarkMode))!!
 
         preferenceDarkMode.setOnPreferenceChangeListener { preference, newValue ->
-            if(newValue is Boolean) {
-                if(newValue) {
+            if (newValue is Boolean) {
+                if (newValue) {
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
                 } else {
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)

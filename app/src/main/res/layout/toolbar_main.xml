@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -9,19 +8,16 @@
 
         <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appbar"
-            android:layout_height="wrap_content"
             android:layout_width="match_parent"
-            android:background="@color/colorPrimary"
-            >
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimary">
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
-                android:layout_height="?attr/actionBarSize"
                 android:layout_width="match_parent"
-
-                app:theme="@style/ToolBarStyle"
+                android:layout_height="?attr/actionBarSize"
                 app:popupTheme="@style/PopupMenuStyle"
-                >
+                app:theme="@style/ToolBarStyle">
 
             </com.google.android.material.appbar.MaterialToolbar>
         </com.google.android.material.appbar.AppBarLayout>

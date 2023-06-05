@@ -21,15 +21,9 @@ import androidx.fragment.app.Fragment
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.graytsar.livewallpaper.databinding.FragmentMainBinding
 
-class FragmentMain: Fragment() {
-    private lateinit var binding:FragmentMainBinding
-
+class FragmentMain : Fragment() {
+    private lateinit var binding: FragmentMainBinding
     private var isVideo = false
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -49,7 +43,7 @@ class FragmentMain: Fragment() {
     }
 
 
-    private fun onClickVideo(view: View){
+    private fun onClickVideo(view: View) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.type = "video/*"
@@ -63,7 +57,7 @@ class FragmentMain: Fragment() {
         }
     }
 
-    private fun onClickImage(view: View){
+    private fun onClickImage(view: View) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.type = "image/*"
@@ -77,55 +71,59 @@ class FragmentMain: Fragment() {
         }
     }
 
-    override fun onActivityResult(request:Int, result:Int, resultData: Intent?){
+    override fun onActivityResult(request: Int, result: Int, resultData: Intent?) {
         super.onActivityResult(request, result, resultData)
 
         val fUri: Uri? = resultData?.data
-        if(fUri == null) {
+        if (fUri == null) {
             return
         }
 
         context?.let { context ->
-            if(context is MainActivity) {
-                try{
+            if (context is MainActivity) {
+                try {
                     WallpaperManager.getInstance(context.applicationContext).clear()
-                } catch (e:Exception){
+                } catch (e: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
 
                 val extension = context.contentResolver.getType(fUri)
 
                 try {
-                    context.contentResolver.takePersistableUriPermission(fUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                } catch (e:Exception) {
+                    context.contentResolver.takePersistableUriPermission(
+                        fUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e)
                 }
 
                 //problem with selecting multiple mime types. Limits how the SAF "Files" App shows stuff
                 //simply add support for non animated images like this
-                if(!isVideo && extension != "image/gif" && extension != "image/webp"){
+                if (!isVideo && extension != "image/gif" && extension != "image/webp") {
                     try {
-                        val manager: WallpaperManager = WallpaperManager.getInstance(context.applicationContext)
+                        val manager: WallpaperManager =
+                            WallpaperManager.getInstance(context.applicationContext)
                         manager.setStream(context.contentResolver.openInputStream(fUri))
                         return
-                    } catch (e:Exception) {
+                    } catch (e: Exception) {
                         FirebaseCrashlytics.getInstance().recordException(e)
                         showAlertError("Something went wrong.")
                         return
                     }
                 }
 
-                if(isVideo && !checkVideo(fUri)) {
+                if (isVideo && !checkVideo(fUri)) {
                     showAlertError("Unable to load video.")
                     return
                 }
 
-                if(!isVideo && !checkImage(fUri)) {
+                if (!isVideo && !checkImage(fUri)) {
                     showAlertError("Unable to load image.")
                     return
                 }
 
-                if(!checkInputStream(fUri)) {
+                if (!checkInputStream(fUri)) {
                     showAlertError("Unable to load.")
                     return
                 }
@@ -133,16 +131,21 @@ class FragmentMain: Fragment() {
                 saveSettings(fUri, isVideo)
 
                 val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
-                intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, ComponentName(context, VideoWallpaper::class.java))
+                intent.putExtra(
+                    WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                    ComponentName(context, VideoWallpaper::class.java)
+                )
 
                 try {
                     startActivity(intent)
-                } catch (e1:Exception) {
+                } catch (e1: Exception) {
                     FirebaseCrashlytics.getInstance().recordException(e1)
                     try {
-                        startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    } catch (e2:Exception) {
+                        startActivity(
+                            Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        )
+                    } catch (e2: Exception) {
                         FirebaseCrashlytics.getInstance().recordException(e2)
                         showAlertError("Can not show Live Wallpaper on this device.")
                     }
@@ -152,22 +155,23 @@ class FragmentMain: Fragment() {
     }
 
     private fun saveSettings(fUri: Uri, isVideo: Boolean) {
-        val sharedPref = requireContext().getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
+        val sharedPref =
+            requireContext().getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
         editor.putString(keyVideo, fUri.toString())
         editor.putBoolean(keyType, isVideo)
         editor.apply()
     }
 
-    private fun checkVideo(fUri: Uri):Boolean {
+    private fun checkVideo(fUri: Uri): Boolean {
         try {
             var mediaPlayer = MediaPlayer.create(context, fUri).apply {
                 isLooping = true
-                setVolume(0f,0f)
+                setVolume(0f, 0f)
             }
             mediaPlayer.release()
             mediaPlayer = null
-        } catch (e:Exception) {
+        } catch (e: Exception) {
             logAnalyticsEvent(context, "error", "video", fUri.toString())
             FirebaseCrashlytics.getInstance().recordException(e)
             return false
@@ -176,11 +180,11 @@ class FragmentMain: Fragment() {
     }
 
     private fun checkImage(fUri: Uri): Boolean {
-        if(context is MainActivity && context != null) {
+        if (context is MainActivity && context != null) {
             try {
                 val cr: ContentResolver = requireContext().contentResolver
 
-                if(Build.VERSION.SDK_INT >= 28){
+                if (Build.VERSION.SDK_INT >= 28) {
                     var source: ImageDecoder.Source? = ImageDecoder.createSource(cr, fUri)
                     var animatedImageDrawable: Drawable? = ImageDecoder.decodeDrawable(source!!)
 
@@ -203,12 +207,12 @@ class FragmentMain: Fragment() {
         return true
     }
 
-    private fun checkInputStream(fUri: Uri):Boolean {
+    private fun checkInputStream(fUri: Uri): Boolean {
         try {
             val cr: ContentResolver = requireContext().contentResolver
             val input = cr.openInputStream(fUri)
             input?.close()
-        } catch (e:Exception) {
+        } catch (e: Exception) {
             logAnalyticsEvent(context, "error", "stream", fUri.toString())
             FirebaseCrashlytics.getInstance().recordException(e)
             return false
@@ -216,7 +220,7 @@ class FragmentMain: Fragment() {
         return true
     }
 
-    private fun showAlertError(message:String){
+    private fun showAlertError(message: String) {
         AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialog))
             .setTitle("Error")
             .setMessage(message)
@@ -226,7 +230,7 @@ class FragmentMain: Fragment() {
             .show()
     }
 
-    private fun logAnalyticsEvent(context: Context?, event:String, param:String, value:String){
+    private fun logAnalyticsEvent(context: Context?, event: String, param: String, value: String) {
         /*
         context?.let {
             val bundle = Bundle()
