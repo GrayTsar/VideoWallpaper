@@ -1,9 +1,12 @@
 <resources>
-    <string name="app_name">Raibu - Live Wallpaper - Any Video</string>
+    <string name="app_name" translatable="false">Raibu</string>
     <string name="video">Video</string>
     <string name="image">Image</string>
 
+    <string name="all_settings">Settings</string>
 
+    <string name="error_image_open">Image could not be opened</string>
+    <string name="error_video_open">Video could not be opened</string>
 
     <string name="keyThemeDarkMode" translatable="false">keyThemeDarkMode</string>
     <string name="keyGifScaleType" translatable="false">keyGifScaleType</string>

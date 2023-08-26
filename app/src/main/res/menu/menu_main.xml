@@ -3,7 +3,5 @@
 
     <item
         android:id="@+id/menuSettings"
-        android:title="Settings"
-        />
-
+        android:title="@string/all_settings" />
 </menu>

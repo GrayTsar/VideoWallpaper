@@ -11,7 +11,6 @@ import androidx.preference.PreferenceFragmentCompat
 class FragmentSettings: PreferenceFragmentCompat() {
     private lateinit var preferenceDarkMode:CheckBoxPreference
 
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -28,21 +27,7 @@ class FragmentSettings: PreferenceFragmentCompat() {
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
                 }
 
-
-                context?.let {context ->
-                    if(context is MainActivity){
-                        context.recreate()
-                    }
-                }
-
-                /*
-                if(newValue == true && SingletonStatic.isNightMode == false) {
-
-                } else if (newValue == false && SingletonStatic.isNightMode == true) {
-
-                }
-
-                 */
+                (context as? ReibuActivity)?.recreate()
             }
 
             true

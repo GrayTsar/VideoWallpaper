@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Raibu - 直播的 桌面背景 - 录像</string>
     <string name="video">录像</string>
     <string name="image">形象</string>
+
+    <string name="all_settings">设置</string>
+
+    <string name="error_image_open">无法打开图像</string>
+    <string name="error_video_open">视频打不开</string>
 
     <string name="nameDarkMode">Dark Mode</string>
     <string name="nameScaleType">Scale Type</string>
     <string name="nameEnableAudio">Enable Audio</string>
-    <string name="nameDoubleTapToPause" >Double Tap to Pause</string>
+    <string name="nameDoubleTapToPause">Double Tap to Pause</string>
     <string name="namePlayOffscreen">Play Offscreen</string>
     <string name="summaryPlayOffscreen">Play when not visible or screen is off</string>
     <string name="nameCropVideo">Crop Video</string>
