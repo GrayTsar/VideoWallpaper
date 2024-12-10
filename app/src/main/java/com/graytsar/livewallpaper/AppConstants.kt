@@ -18,7 +18,3 @@ const val valueDefaultDoubleTapToPause = false
 const val valueDefaultPlayOffscreen = false
 
 const val doubleTapTimeout: Long = 500L
-
-object SingletonStatic {
-    var isNightMode:Boolean = true
-}

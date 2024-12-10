@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.ImageDecoder
 import android.graphics.Movie
 import android.graphics.drawable.Drawable
@@ -20,17 +21,33 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
-import com.graytsar.livewallpaper.databinding.FragmentPickerBinding
+import com.graytsar.livewallpaper.compose.AppTheme
 
 class FragmentPicker : Fragment() {
-    private var _binding: FragmentPickerBinding? = null
-    private val binding: FragmentPickerBinding
-        get() = _binding!!
 
     /**
      * Video picker launcher.
@@ -95,43 +112,51 @@ class FragmentPicker : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentPickerBinding.inflate(inflater, container, false)
+        return ComposeView(requireContext()).apply {
+            setContent {
+                WallpaperPicketScreen()
+            }
+        }
+    }
 
-        binding.buttonImage.setOnClickListener(onImageClickListener)
-        binding.buttonVideo.setOnClickListener(onVideoClickListener)
+    @Preview(
+        name = "Light Mode",
+        showBackground = true
+    )
+    @Preview(
+        uiMode = Configuration.UI_MODE_NIGHT_YES,
+        name = "Dark Mode",
+        showBackground = true
+    )
+    @Composable
+    fun WallpaperPicketScreen() {
+        AppTheme {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Column(
+                    modifier = Modifier.width(IntrinsicSize.Max),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    SelectionOutlinedButton(
+                        onClick = onVideoClickListener,
+                        text = R.string.video,
+                    )
+                    SelectionOutlinedButton(
+                        onClick = onImageClickListener,
+                        text = R.string.image
+                    )
+                }
+            }
+        }
+    }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         requireActivity().addMenuProvider(menuProvider, viewLifecycleOwner, Lifecycle.State.RESUMED)
-
-        return binding.root
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
-    /**
-     * Launch the video picker.
-     */
-    private val onVideoClickListener = View.OnClickListener {
-        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            type = "video/*"
-        }
-        videoLauncher.launch(Intent.createChooser(intent, "Video"))
-    }
-
-    /**
-     * Launch the image picker.
-     */
-    private val onImageClickListener = View.OnClickListener {
-        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            type = "image/*"
-        }
-        imageLauncher.launch(Intent.createChooser(intent, "Image"))
     }
 
     /**
@@ -196,6 +221,30 @@ class FragmentPicker : Fragment() {
         Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
     }
 
+    /**
+     * Launch the video picker.
+     */
+    private val onVideoClickListener = {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            type = "video/*"
+        }
+        videoLauncher.launch(Intent.createChooser(intent, "Video"))
+    }
+
+    /**
+     * Launch the image picker.
+     */
+    private val onImageClickListener = {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            type = "image/*"
+        }
+        imageLauncher.launch(Intent.createChooser(intent, "Image"))
+    }
+
     private val menuProvider = object : MenuProvider {
         override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
             menuInflater.inflate(R.menu.menu_main, menu)
@@ -209,5 +258,33 @@ class FragmentPicker : Fragment() {
             }
             return true
         }
+    }
+}
+
+@Composable
+private fun SelectionOutlinedButton(
+    onClick: () -> Unit,
+    @StringRes
+    text: Int
+) {
+    AppTheme { }.apply {
+        lightColorScheme()
+    }
+
+    OutlinedButton(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        border = BorderStroke(
+            width = 3.dp,
+            color = MaterialTheme.colorScheme.primary
+            //colorResource(id = R.color.accent)
+        )
+    ) {
+        Text(
+            text = stringResource(text),
+            fontSize = 24.sp,
+            color = MaterialTheme.colorScheme.primary
+            //colorResource(id = R.color.accent)
+        )
     }
 }

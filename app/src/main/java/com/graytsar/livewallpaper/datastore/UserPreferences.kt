@@ -27,6 +27,6 @@ class UserPreferences @Inject constructor(@ApplicationContext val context: Conte
     }
 
     override suspend fun readForceDarkMode() = context.dataStore.data.map {
-        it[FORCE_DARK_MODE] ?: false
+        it[FORCE_DARK_MODE] == true
     }
 }

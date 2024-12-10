@@ -20,7 +20,7 @@ class ReibuApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        when (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) {
+        when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
             Configuration.UI_MODE_NIGHT_YES -> {
             }
 

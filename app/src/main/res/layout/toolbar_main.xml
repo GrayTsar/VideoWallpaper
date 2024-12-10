@@ -19,7 +19,6 @@
             app:menu="@menu/menu_main"
             app:popupTheme="@style/StyleOverwrite.PopupMenu"
             tools:title="Lorem Ipsum">
-
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
