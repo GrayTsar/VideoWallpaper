@@ -22,4 +22,8 @@
     <string name="namePlayOffscreen">Play Offscreen</string>
     <string name="summaryPlayOffscreen">Play when not visible or screen is off</string>
     <string name="nameCropVideo">Crop Video</string>
+
+    <string name="scale_type_fit">Fit to Screen</string>
+    <string name="scale_type_center">Center</string>
+    <string name="scale_type_original">Original</string>
 </resources>

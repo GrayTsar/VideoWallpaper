@@ -15,4 +15,8 @@
     <string name="namePlayOffscreen">Play Offscreen</string>
     <string name="summaryPlayOffscreen">Spielen wenn nicht sichtabar oder Bildschirm ist aus</string>
     <string name="nameCropVideo">Crop Video</string>
+
+    <string name="scale_type_fit">Fit to Screen</string>
+    <string name="scale_type_center">Zentriert</string>
+    <string name="scale_type_original">Original</string>
 </resources>
