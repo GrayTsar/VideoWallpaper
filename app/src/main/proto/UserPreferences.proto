@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option java_package = "com.graytsar.livewallpaper.datastore";
+option java_multiple_files = true;
+
+message UserPreferences {
+  bool darkMode = 1;
+  int32 gifScaleType = 2;
+  bool videoEnableAudio = 3;
+  bool videoCrop = 4;
+  bool doubleTapToPause = 5;
+  bool playOffscreen = 6;
+}

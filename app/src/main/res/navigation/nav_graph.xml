@@ -13,7 +13,7 @@
 
     <fragment
         android:id="@+id/fragmentContainerSettings"
-        android:name="com.graytsar.livewallpaper.FragmentContainerSettings"
+        android:name="com.graytsar.livewallpaper.settings.FragmentSettingsScreen"
         android:label="@string/all_settings"
         tools:layout="@layout/fragment_container_settings" />
 </navigation>

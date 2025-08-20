@@ -12,6 +12,8 @@
 
     <PreferenceCategory android:title="GIF">
         <ListPreference
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
             app:defaultValue="fit_to_screen"
             app:entries="@array/entries_gif_scale_type"
             app:entryValues="@array/values_gif_scale_type"

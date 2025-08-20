@@ -1,3 +1,5 @@
+import com.google.protobuf.gradle.id
+
 plugins {
     id("org.jetbrains.kotlin.android")
     id("com.android.application")
@@ -6,6 +8,7 @@ plugins {
     id("com.google.firebase.crashlytics")
     id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.protobuf")
 }
 
 android {
@@ -59,6 +62,25 @@ android {
 
 }
 
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.32.0"
+    }
+
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                id("kotlin") {
+                    option("lite")
+                }
+                create("java") {
+                    option("lite")
+                }
+            }
+        }
+    }
+}
+
 composeCompiler {
     reportsDestination = layout.buildDirectory.dir("compose_compiler")
     stabilityConfigurationFiles.addAll(
@@ -74,7 +96,11 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("androidx.preference:preference-ktx:1.2.1")
+
     implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation("androidx.datastore:datastore:1.1.7")
+    implementation("com.google.protobuf:protobuf-kotlin-lite:4.32.0")
+
     implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.2")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.2")
