@@ -11,15 +11,10 @@ import com.google.android.gms.ads.MobileAds
 import com.graytsar.livewallpaper.databinding.ActivityRaibuBinding
 
 class ReibuActivity : AppCompatActivity() {
-    private var _binding: ActivityRaibuBinding? = null
-    private val binding: ActivityRaibuBinding
-        get() = _binding!!
-    private lateinit var appBarConfiguration: AppBarConfiguration
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        _binding = ActivityRaibuBinding.inflate(layoutInflater)
+        val binding = ActivityRaibuBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         val toolbar: Toolbar = binding.includeToolbar.toolbar
@@ -30,21 +25,18 @@ class ReibuActivity : AppCompatActivity() {
         val navController: NavController = navHostFragment.navController
         NavigationUI.setupActionBarWithNavController(this, navController)
 
-        appBarConfiguration = AppBarConfiguration(setOf(R.id.fragmentMain))
+        val appBarConfiguration = AppBarConfiguration(setOf(R.id.fragmentMain))
 
         binding.includeToolbar.toolbar.setNavigationOnClickListener {
             navController.popBackStack()
         }
+
+        Util.applyWindowInsetsForTopAppBar(binding.includeToolbar.toolbar)
 
         try {
             MobileAds.initialize(this)
         } catch (e: Exception) {
             //do nothing
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        _binding = null
     }
 }

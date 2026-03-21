@@ -2,7 +2,10 @@ package com.graytsar.livewallpaper
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.*
+import android.graphics.Canvas
+import android.graphics.ImageDecoder
+import android.graphics.Movie
+import android.graphics.Rect
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaPlayer
@@ -16,7 +19,11 @@ import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import androidx.preference.PreferenceManager
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 
@@ -75,8 +82,8 @@ class VideoWallpaper : WallpaperService() {
             holderInstance = holder
 
             val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
-            var fUri: Uri = runCatching {
-                Uri.parse(sharedPref.getString(keyVideo, null))
+            val fUri: Uri = runCatching {
+                sharedPref.getString(keyVideo, null)?.toUri()
             }.getOrNull() ?: return
 
             if (isPreview) {
@@ -169,7 +176,7 @@ class VideoWallpaper : WallpaperService() {
             }
 
             try {
-                val inputStream = contentResolver.openInputStream(fUri!!)!!
+                val inputStream = contentResolver.openInputStream(fUri)!!
                 val fileOutputStream = FileOutputStream("$basePath/$folder/$imageName", false)
 
                 inputStream.copyTo(fileOutputStream)
@@ -303,7 +310,7 @@ class VideoWallpaper : WallpaperService() {
 
             val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
             val fUri: Uri = runCatching {
-                Uri.parse(sharedPref.getString(keyVideo, null))
+                sharedPref.getString(keyVideo, null)?.toUri()
             }.getOrNull() ?: return
 
             if (isPreview) onPreview(fUri) else onPlay(fUri)
@@ -493,7 +500,7 @@ class VideoWallpaper : WallpaperService() {
 
             val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
             val fUri: Uri = runCatching {
-                Uri.parse(sharedPref.getString(keyVideo, null))
+                sharedPref.getString(keyVideo, null)?.toUri()
             }.getOrNull() ?: return
 
             if (isPreview) onPreview(fUri, holder) else onPlay(fUri, holder)

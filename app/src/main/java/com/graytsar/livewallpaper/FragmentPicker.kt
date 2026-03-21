@@ -20,6 +20,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.core.content.edit
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -28,9 +29,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.graytsar.livewallpaper.databinding.FragmentPickerBinding
 
 class FragmentPicker : Fragment() {
-    private var _binding: FragmentPickerBinding? = null
-    private val binding: FragmentPickerBinding
-        get() = _binding!!
 
     /**
      * Video picker launcher.
@@ -70,7 +68,7 @@ class FragmentPicker : Fragment() {
             wallpaperManager.clear()
 
             //problem with selecting multiple mime types. Limits how the SAF "Files" App shows stuff
-            //simply add support for non animated images like this
+            //simply add support for non-animated images like this
             val extension = requireContext().contentResolver.getType(imageUri)
             if (extension != "image/gif" && extension != "image/webp") {
                 wallpaperManager.setStream(requireContext().contentResolver.openInputStream(imageUri))
@@ -95,19 +93,15 @@ class FragmentPicker : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentPickerBinding.inflate(inflater, container, false)
-
-        binding.buttonImage.setOnClickListener(onImageClickListener)
-        binding.buttonVideo.setOnClickListener(onVideoClickListener)
-
-        requireActivity().addMenuProvider(menuProvider, viewLifecycleOwner, Lifecycle.State.RESUMED)
-
-        return binding.root
+        return FragmentPickerBinding.inflate(inflater, container, false).apply {
+            buttonImage.setOnClickListener(onImageClickListener)
+            buttonVideo.setOnClickListener(onVideoClickListener)
+        }.root
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        requireActivity().addMenuProvider(menuProvider, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     /**
@@ -183,10 +177,10 @@ class FragmentPicker : Fragment() {
     private fun saveSettings(fUri: Uri, isVideo: Boolean) {
         val sharedPref =
             requireContext().getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-        editor.putString(keyVideo, fUri.toString())
-        editor.putBoolean(keyType, isVideo)
-        editor.apply()
+        sharedPref.edit {
+            putString(keyVideo, fUri.toString())
+            putBoolean(keyType, isVideo)
+        }
     }
 
     /**
