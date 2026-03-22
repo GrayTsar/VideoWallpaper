@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.google.hilt)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -63,27 +64,37 @@ base {
 }
 
 dependencies {
+    //android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.legacy.support.v4)
-    implementation(libs.material)
-    implementation(libs.androidx.constraintlayout)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.legacy.support.v4)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.material)
+    implementation(libs.androidx.work.runtime.ktx)
+
+    //datastore
     implementation(libs.androidx.preference.ktx)
-
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore)
+    implementation(libs.kotlinx.serialization.protobuf)
 
+
+    //lifecycle
     implementation(libs.androidx.lifecycle.extensions)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
-    implementation(libs.firebase.analytics.ktx)
-    implementation(libs.firebase.crashlytics.ktx)
+    //navigation
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
 
-    implementation(libs.androidx.work.runtime.ktx)
+    //firebase
+    implementation(libs.firebase.analytics.ktx)
+    implementation(libs.firebase.crashlytics.ktx)
+
+    //hilt
     implementation(libs.androidx.hilt.common)
     implementation(libs.androidx.hilt.navigation.fragment)
     implementation(libs.androidx.hilt.work)
@@ -91,8 +102,13 @@ dependencies {
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.hilt.compiler)
 
+    //ads
     implementation(libs.play.services.ads)
 
+    //functional programming
+    implementation(libs.arrow.kt)
+
+    //test
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)

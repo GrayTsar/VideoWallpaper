@@ -1,7 +1,6 @@
 package com.graytsar.livewallpaper
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.graphics.Canvas
 import android.graphics.ImageDecoder
 import android.graphics.Movie
@@ -16,28 +15,58 @@ import android.view.MotionEvent
 import android.view.Surface
 import android.view.SurfaceHolder
 import androidx.annotation.RequiresApi
-import androidx.core.net.toUri
 import androidx.preference.PreferenceManager
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.DelicateCoroutinesApi
+import com.graytsar.livewallpaper.repository.UserPreferencesRepository
+import com.graytsar.livewallpaper.util.WallpaperType
+import com.graytsar.livewallpaper.util.doubleTapTimeout
+import com.graytsar.livewallpaper.util.valueDefaultDoubleTapToPause
+import com.graytsar.livewallpaper.util.valueDefaultPlayOffscreen
+import com.graytsar.livewallpaper.util.valueDefaultScaleType
+import com.graytsar.livewallpaper.util.valueDefaultVideoAudio
+import com.graytsar.livewallpaper.util.valueDefaultVideoCrop
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.File
-import java.io.FileOutputStream
+import javax.inject.Inject
 
-@DelicateCoroutinesApi
-class VideoWallpaper : WallpaperService() {
+@AndroidEntryPoint
+class VideoWallpaperService : WallpaperService() {
+    @Inject
+    lateinit var userPreferencesRepository: UserPreferencesRepository
+
     private var settingsAudio: Boolean = false
     private var settingsVideoCrop: Boolean = false
     private var settingsScaleType: String = ""
     private var settingsDoubleTapToPause: Boolean = false
     private var settingsPlayOffscreen: Boolean = false
 
+    private fun getActiveFilePath(isPreview: Boolean): String? {
+        return runBlocking {
+            if (!isPreview) {
+                val previewPath = userPreferencesRepository.getPreviewPath()
+                if (previewPath != null) {
+                    userPreferencesRepository.setWallpaperPath(previewPath)
+                    userPreferencesRepository.setPreviewPath(null)
+                    previewPath
+                } else {
+                    userPreferencesRepository.getWallpaperPath()
+                }
+            } else {
+                userPreferencesRepository.getPreviewPath() ?: userPreferencesRepository.getWallpaperPath()
+            }
+        }
+    }
+
     override fun onCreateEngine(): Engine {
-        val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
-        val isVideo = sharedPref.getBoolean(keyType, false)
+        val isVideo = runBlocking {
+            userPreferencesRepository.getWallpaperType() == WallpaperType.VIDEO
+        }
 
         val settingsSP = PreferenceManager.getDefaultSharedPreferences(applicationContext)
 
@@ -81,15 +110,20 @@ class VideoWallpaper : WallpaperService() {
             super.onSurfaceCreated(holder)
             holderInstance = holder
 
-            val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
-            val fUri: Uri = runCatching {
-                sharedPref.getString(keyVideo, null)?.toUri()
-            }.getOrNull() ?: return
+            val filePath = getActiveFilePath(isPreview) ?: return
 
-            if (isPreview) {
-                onPreview(fUri)
-            } else {
-                onPlay(fUri)
+            val file = File(filePath)
+            if (file.exists()) {
+                val source = ImageDecoder.createSource(file)
+                animatedImageDrawable = runBlocking(Dispatchers.IO) {
+                    ImageDecoder.decodeDrawable(source)
+                }
+
+                if (animatedImageDrawable is AnimatedImageDrawable) {
+                    val anim = animatedImageDrawable as AnimatedImageDrawable
+                    anim.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                    anim.start()
+                }
             }
 
             drawJob = getDrawJob()
@@ -152,49 +186,6 @@ class VideoWallpaper : WallpaperService() {
         override fun onDestroy() {
             clearImage()
             super.onDestroy()
-        }
-
-        private fun onPreview(fUri: Uri) {
-            val source = ImageDecoder.createSource(contentResolver, fUri)
-            animatedImageDrawable = ImageDecoder.decodeDrawable(source)
-
-            if (animatedImageDrawable is AnimatedImageDrawable) {
-                val anim = animatedImageDrawable as AnimatedImageDrawable
-                anim.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-                anim.start()
-            }
-        }
-
-        private fun onPlay(fUri: Uri) {
-            val basePath = applicationContext.filesDir.path
-            val folder = imageFolder
-
-            //create directories if they do not exist
-            val directory = File("$basePath/$folder")
-            if (!directory.isDirectory) {
-                directory.mkdirs()
-            }
-
-            try {
-                val inputStream = contentResolver.openInputStream(fUri)!!
-                val fileOutputStream = FileOutputStream("$basePath/$folder/$imageName", false)
-
-                inputStream.copyTo(fileOutputStream)
-
-                fileOutputStream.close()
-                inputStream.close()
-            } catch (e: Exception) {
-                FirebaseCrashlytics.getInstance().recordException(e)
-            }
-
-            val source = ImageDecoder.createSource(File("$basePath/$folder/$imageName"))
-            animatedImageDrawable = ImageDecoder.decodeDrawable(source)
-
-            if (animatedImageDrawable is AnimatedImageDrawable) {
-                val anim = animatedImageDrawable as AnimatedImageDrawable
-                anim.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-                anim.start()
-            }
         }
 
         private fun startDrawOriginal(): Job {
@@ -294,6 +285,7 @@ class VideoWallpaper : WallpaperService() {
         }
     }
 
+    @Suppress("DEPRECATION")
     inner class ImageWallpaperEngineApi19 : Engine() {
         private var movie: Movie? = null
 
@@ -308,12 +300,12 @@ class VideoWallpaper : WallpaperService() {
             super.onSurfaceCreated(holder)
             holderInstance = holder
 
-            val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
-            val fUri: Uri = runCatching {
-                sharedPref.getString(keyVideo, null)?.toUri()
-            }.getOrNull() ?: return
+            val filePath = getActiveFilePath(isPreview) ?: return
+            val file = File(filePath)
+            if (file.exists()) {
+                movie = Movie.decodeStream(file.inputStream())
+            }
 
-            if (isPreview) onPreview(fUri) else onPlay(fUri)
             drawJob = getDrawJob()
         }
 
@@ -363,35 +355,6 @@ class VideoWallpaper : WallpaperService() {
         override fun onDestroy() {
             clearImage()
             super.onDestroy()
-        }
-
-        private fun onPreview(fUri: Uri) {
-            movie = Movie.decodeStream(contentResolver.openInputStream(fUri))
-        }
-
-        private fun onPlay(fUri: Uri) {
-            val basePath = applicationContext.filesDir.path
-            val folder = imageFolder
-
-            //create directories if they do not exist
-            val directory = File("$basePath/$folder")
-            if (!directory.isDirectory) {
-                directory.mkdirs()
-            }
-
-            try {
-                val inputStream = contentResolver.openInputStream(fUri)!!
-                val fileOutputStream = FileOutputStream("$basePath/$folder/$imageName", false)
-
-                inputStream.copyTo(fileOutputStream)
-
-                fileOutputStream.close()
-                inputStream.close()
-            } catch (e: Exception) {
-                FirebaseCrashlytics.getInstance().recordException(e)
-            }
-
-            movie = Movie.decodeStream(File("$basePath/$folder/$imageName").inputStream())
         }
 
         private fun startDrawOriginal(): Job {
@@ -484,7 +447,6 @@ class VideoWallpaper : WallpaperService() {
         }
     }
 
-
     inner class VideoWallpaperEngine : Engine() {
         private var mediaPlayer: MediaPlayer? = null
 
@@ -498,73 +460,27 @@ class VideoWallpaper : WallpaperService() {
         override fun onSurfaceCreated(holder: SurfaceHolder?) {
             super.onSurfaceCreated(holder)
 
-            val sharedPref = getSharedPreferences(keySharedPrefVideo, Context.MODE_PRIVATE)
-            val fUri: Uri = runCatching {
-                sharedPref.getString(keyVideo, null)?.toUri()
-            }.getOrNull() ?: return
+            val filePath = getActiveFilePath(isPreview) ?: return
 
-            if (isPreview) onPreview(fUri, holder) else onPlay(fUri, holder)
-        }
+            val file = File(filePath)
+            if (file.exists()) {
+                try {
+                    mediaPlayer = MediaPlayer.create(
+                        this@VideoWallpaperService,
+                        Uri.fromFile(file),
+                        VideoWallpaperSurfaceHolder(holder!!)
+                    )
+                    mediaPlayer?.isLooping = true
 
-        private fun onPreview(fUri: Uri, holder: SurfaceHolder?) {
-            try {
-                mediaPlayer = MediaPlayer.create(
-                    this@VideoWallpaper,
-                    fUri,
-                    VideoWallpaperSurfaceHolder(holder!!)
-                )
-                mediaPlayer?.isLooping = true
+                    if (settingsVideoCrop) {
+                        mediaPlayer?.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+                    }
 
-                if (settingsVideoCrop) {
-                    mediaPlayer?.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
-                }
-
-                if (!settingsAudio) {
-                    mediaPlayer?.setVolume(0.0f, 0.0f)
-                }
-            } catch (e: Exception) {
-                FirebaseCrashlytics.getInstance().recordException(e)
-            }
-        }
-
-        private fun onPlay(fUri: Uri, holder: SurfaceHolder?) {
-            val basePath = applicationContext.filesDir.path
-            val folder = videoFolder
-
-            //create directories if they do not exist
-            val directory = File("$basePath/$folder")
-            if (!directory.isDirectory) {
-                directory.mkdirs()
-            }
-
-            try {
-                val inputStream = contentResolver.openInputStream(fUri)!!
-                val fileOutputStream = FileOutputStream("$basePath/$folder/$videoName", false)
-
-                inputStream.copyTo(fileOutputStream)
-
-                fileOutputStream.close()
-                inputStream.close()
-            } catch (e: Exception) {
-                FirebaseCrashlytics.getInstance().recordException(e)
-            }
-
-
-            val file = File("$basePath/$videoFolder").listFiles()
-            if (file != null && file.isNotEmpty() && file[0].exists()) {
-                mediaPlayer = MediaPlayer.create(
-                    this@VideoWallpaper,
-                    file[0].toUri(),
-                    VideoWallpaperSurfaceHolder(holder!!)
-                )
-                mediaPlayer?.isLooping = true
-
-                if (settingsVideoCrop) {
-                    mediaPlayer?.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
-                }
-
-                if (!settingsAudio) {
-                    mediaPlayer?.setVolume(0.0f, 0.0f)
+                    if (!settingsAudio) {
+                        mediaPlayer?.setVolume(0.0f, 0.0f)
+                    }
+                } catch (e: Exception) {
+                    FirebaseCrashlytics.getInstance().recordException(e)
                 }
             }
         }
@@ -583,8 +499,6 @@ class VideoWallpaper : WallpaperService() {
                     mediaPlayer?.pause()
                 } else {
                     mediaPlayer?.start()
-
-
                 }
             }
         }
@@ -627,33 +541,22 @@ class VideoWallpaper : WallpaperService() {
     }
 
     private class VideoWallpaperSurfaceHolder(private val holder: SurfaceHolder) : SurfaceHolder {
+        @Suppress("DEPRECATION")
         @SuppressLint("ObsoleteSdkInt")
+        @Deprecated("Deprecated in Java")
         override fun setType(type: Int) {
             if (Build.VERSION.SDK_INT <= 11) {
                 holder.setType(type)
             }
         }
-
-        override fun getSurface(): Surface {
-            return holder.surface
-        }
-
+        override fun getSurface(): Surface = holder.surface
         override fun setSizeFromLayout() {
             holder.setSizeFromLayout()
         }
 
-        override fun lockCanvas(): Canvas {
-            return holder.lockCanvas()
-        }
-
-        override fun lockCanvas(dirty: Rect?): Canvas {
-            return holder.lockCanvas(dirty)
-        }
-
-        override fun getSurfaceFrame(): Rect {
-            return holder.surfaceFrame
-        }
-
+        override fun lockCanvas(): Canvas = holder.lockCanvas()
+        override fun lockCanvas(dirty: Rect?): Canvas = holder.lockCanvas(dirty)
+        override fun getSurfaceFrame(): Rect = holder.surfaceFrame
         override fun setFixedSize(width: Int, height: Int) {
             holder.setFixedSize(width, height)
         }
@@ -662,10 +565,7 @@ class VideoWallpaper : WallpaperService() {
             holder.removeCallback(callback)
         }
 
-        override fun isCreating(): Boolean {
-            return holder.isCreating
-        }
-
+        override fun isCreating(): Boolean = holder.isCreating
         override fun addCallback(callback: SurfaceHolder.Callback?) {
             holder.addCallback(callback)
         }
@@ -674,10 +574,7 @@ class VideoWallpaper : WallpaperService() {
             holder.setFormat(format)
         }
 
-        override fun setKeepScreenOn(screenOn: Boolean) {
-
-        }
-
+        override fun setKeepScreenOn(screenOn: Boolean) {}
         override fun unlockCanvasAndPost(canvas: Canvas?) {
             holder.unlockCanvasAndPost(canvas)
         }

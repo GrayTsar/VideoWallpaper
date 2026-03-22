@@ -29,7 +29,7 @@
             android:value="@string/gms_app_id" />
 
         <service
-            android:name=".VideoWallpaper"
+            android:name=".VideoWallpaperService"
             android:enabled="true"
             android:exported="true"
             android:label="@string/app_name"

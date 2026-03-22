@@ -1,4 +1,4 @@
-package com.graytsar.livewallpaper
+package com.graytsar.livewallpaper.util
 
 const val keySharedPrefVideo = "video"
 const val keyVideo = "key"
