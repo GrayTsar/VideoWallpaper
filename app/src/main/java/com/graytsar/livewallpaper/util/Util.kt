@@ -15,7 +15,6 @@ import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isDirectory
-import kotlin.io.path.name
 import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 import kotlin.io.path.walk
@@ -23,6 +22,29 @@ import kotlin.io.path.walk
 enum class WallpaperType {
     IMAGE,
     VIDEO;
+}
+
+enum class GifScaleType {
+    FIT_TO_SCREEN,
+    CENTER,
+    ORIGINAL;
+
+
+    fun toTranslation(): String {
+        return when (this) {
+            FIT_TO_SCREEN -> "fit_to_screen"
+            CENTER -> "center"
+            ORIGINAL -> "original"
+        }
+    }
+
+    companion object {
+        fun getTranslations() = listOf(
+            FIT_TO_SCREEN.toTranslation(),
+            CENTER.toTranslation(),
+            ORIGINAL.toTranslation()
+        )
+    }
 }
 
 object Util {
@@ -54,16 +76,6 @@ object Util {
             path.createDirectories()
         }
         return path
-    }
-
-    fun getImage(context: Context): Path? {
-        val directory = getImageImportDirectory(context)
-        return directory.walk().filter { !it.isDirectory() }.maxByOrNull { it.name }
-    }
-
-    fun getVideo(context: Context): Path? {
-        val directory = getVideoImportDirectory(context)
-        return directory.walk().filter { !it.isDirectory() }.maxByOrNull { it.name }
     }
 
     fun importImage(inputStream: InputStream, context: Context): Path {

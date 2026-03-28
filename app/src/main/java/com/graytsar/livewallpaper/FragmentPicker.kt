@@ -189,7 +189,7 @@ class FragmentPicker : Fragment() {
         override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
             when (menuItem.itemId) {
                 R.id.menuSettings -> {
-                    findNavController().navigate(R.id.fragmentContainerSettings)
+                    findNavController().navigate(R.id.fragmentSettings)
                 }
             }
             return true

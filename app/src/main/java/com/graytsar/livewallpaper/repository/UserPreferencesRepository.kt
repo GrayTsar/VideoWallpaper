@@ -14,6 +14,10 @@ class UserPreferencesRepository(
         it.preference.foreDarkMode
     }.first()
 
+    suspend fun setForceDarkMode(enabled: Boolean) = dataStore.updateData {
+        it.copy(preference = it.preference.copy(foreDarkMode = enabled))
+    }
+
     suspend fun getWallpaperType() = dataStore.data.map {
         it.wallpaperType?.toWallpaperType()
     }.first()
