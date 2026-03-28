@@ -3,16 +3,24 @@
     <string name="video">vidéo</string>
     <string name="image">image</string>
 
-    <string name="all_settings">Réglages</string>
-
     <string name="error_image_open">L\'image n\'a pas pu être ouverte.</string>
     <string name="error_video_open">La vidéo n\'a pas pu être ouverte.</string>
 
-    <string name="nameDarkMode">mode nocturne</string>
-    <string name="nameScaleType">Scale Type</string>
-    <string name="nameEnableAudio">activer l\'audio</string>
-    <string name="nameDoubleTapToPause">Double Tap to Pause</string>
-    <string name="namePlayOffscreen">Play Offscreen</string>
-    <string name="summaryPlayOffscreen">Play when not visible or screen is off</string>
-    <string name="nameCropVideo">Crop Video</string>
+    <!-- settings -->
+    <string name="section_theme">Thème</string>
+    <string name="section_gif">GIF</string>
+    <string name="section_video">Vidéo</string>
+    <string name="section_general">Général</string>
+    <string name="settings">Paramètres</string>
+    <string name="dark_mode">Mode sombre</string>
+    <string name="scale_type">Mise à l\'échelle</string>
+    <string name="enable_audio">Activer le son</string>
+    <string name="double_tap_to_pause">Appuyer deux fois pour mettre en pause</string>
+    <string name="play_offscreen">Lecture hors écran</string>
+    <string name="summery_play_offscreen">Lecture lorsque la vidéo n\'est pas visible ou que l\'écran est éteint</string>
+    <string name="crop_video">Recadrer la vidéo</string>
+    <!-- scale type -->
+    <string name="fit_to_screen">Ajuster à l\'écran</string>
+    <string name="center">Centrer</string>
+    <string name="original">Original</string>
 </resources>

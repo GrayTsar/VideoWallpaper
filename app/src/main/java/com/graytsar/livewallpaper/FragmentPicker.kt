@@ -39,7 +39,12 @@ class FragmentPicker : Fragment() {
     private val wallpaperLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                //do nothing
+                runBlocking(Dispatchers.IO) {
+                    val previewPath = viewModel.userPreferencesRepository.getPreviewPath()
+                    val previewType = viewModel.userPreferencesRepository.getPreviewWallpaperType()
+                    viewModel.userPreferencesRepository.setWallpaperPath(previewPath)
+                    viewModel.userPreferencesRepository.setWallpaperType(previewType)
+                }
             } else {
                 runBlocking(Dispatchers.IO) {
                     val previewPath = viewModel.userPreferencesRepository.getPreviewPath()
@@ -60,7 +65,7 @@ class FragmentPicker : Fragment() {
             val result = viewModel.validateVideo(videoUri, requireContext())
             if (result) {
                 val path = saveVideo(videoUri)
-                saveSelection(videoUri, path!!, true)
+                saveSelection(path!!, WallpaperType.VIDEO)
                 launchVideoWallpaperService()
             } else {
                 showError(R.string.error_image_open)
@@ -76,7 +81,7 @@ class FragmentPicker : Fragment() {
             val result = viewModel.validateImage(imageUri)
             if (result) {
                 val path = saveImage(imageUri)
-                saveSelection(imageUri, path!!, false)
+                saveSelection(path!!, WallpaperType.IMAGE)
                 launchVideoWallpaperService()
             } else {
                 showError(R.string.error_image_open)
@@ -99,16 +104,10 @@ class FragmentPicker : Fragment() {
         requireActivity().addMenuProvider(menuProvider, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
-    /**
-     * Save the file uri for a video or image in shared preferences.
-     *
-     * @param fUri the uri of the video or image.
-     * @param isVideo whether the file is a video or not.
-     */
-    private fun saveSelection(fUri: Uri, path: Path, isVideo: Boolean) {
+    private fun saveSelection(path: Path, type: WallpaperType) {
         runBlocking(Dispatchers.IO) {
             Util.cleanup(requireContext(), viewModel.userPreferencesRepository, path)
-            viewModel.userPreferencesRepository.setWallpaperType(if (isVideo) WallpaperType.VIDEO else WallpaperType.IMAGE)
+            viewModel.userPreferencesRepository.setPreviewWallpaperType(type)
             viewModel.userPreferencesRepository.setPreviewPath(path.pathString)
         }
     }

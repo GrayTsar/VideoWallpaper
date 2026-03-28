@@ -3,9 +3,11 @@ package com.graytsar.livewallpaper.util
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.StringRes
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
+import com.graytsar.livewallpaper.R
 import com.graytsar.livewallpaper.repository.UserPreferencesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,17 +26,17 @@ enum class WallpaperType {
     VIDEO;
 }
 
-enum class GifScaleType {
-    FIT_TO_SCREEN,
-    CENTER,
-    ORIGINAL;
+enum class GifScaleType(val value: Int) {
+    FIT_TO_SCREEN(0),
+    CENTER(1),
+    ORIGINAL(2);
 
-
-    fun toTranslation(): String {
+    @StringRes
+    fun toTranslation(): Int {
         return when (this) {
-            FIT_TO_SCREEN -> "fit_to_screen"
-            CENTER -> "center"
-            ORIGINAL -> "original"
+            FIT_TO_SCREEN -> R.string.fit_to_screen
+            CENTER -> R.string.center
+            ORIGINAL -> R.string.original
         }
     }
 
@@ -44,6 +46,9 @@ enum class GifScaleType {
             CENTER.toTranslation(),
             ORIGINAL.toTranslation()
         )
+
+        fun from(index: Int) =
+            entries.getOrNull(index) ?: throw IllegalArgumentException("Invalid gif scale type index $index")
     }
 }
 

@@ -74,8 +74,6 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
 
     //datastore
-    implementation(libs.androidx.preference.ktx)
-    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore)
     implementation(libs.kotlinx.serialization.protobuf)
 

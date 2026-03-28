@@ -12,7 +12,6 @@ import android.service.wallpaper.WallpaperService
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.SurfaceHolder
-import androidx.preference.PreferenceManager
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.graytsar.livewallpaper.engine.Api28ImageRenderer
 import com.graytsar.livewallpaper.engine.EngineSettings
@@ -20,12 +19,6 @@ import com.graytsar.livewallpaper.engine.LegacyImageRenderer
 import com.graytsar.livewallpaper.engine.WallpaperRenderer
 import com.graytsar.livewallpaper.repository.UserPreferencesRepository
 import com.graytsar.livewallpaper.util.WallpaperType
-import com.graytsar.livewallpaper.util.doubleTapTimeout
-import com.graytsar.livewallpaper.util.valueDefaultDoubleTapToPause
-import com.graytsar.livewallpaper.util.valueDefaultPlayOffscreen
-import com.graytsar.livewallpaper.util.valueDefaultScaleType
-import com.graytsar.livewallpaper.util.valueDefaultVideoAudio
-import com.graytsar.livewallpaper.util.valueDefaultVideoCrop
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -36,20 +29,16 @@ class VideoWallpaperService : WallpaperService() {
     @Inject
     lateinit var userPreferencesRepository: UserPreferencesRepository
 
-    private var settingsAudio: Boolean = false
-    private var settingsVideoCrop: Boolean = false
-    private var settingsScaleType: String = ""
-    private var settingsDoubleTapToPause: Boolean = false
-    private var settingsPlayOffscreen: Boolean = false
-
     private fun getActiveFilePath(isPreview: Boolean): String? {
         return runBlocking {
             if (isPreview) {
                 userPreferencesRepository.getPreviewPath() ?: userPreferencesRepository.getWallpaperPath()
             } else {
                 val previewPath = userPreferencesRepository.getPreviewPath()
+                val previewType = userPreferencesRepository.getPreviewWallpaperType()
                 if (previewPath != null) {
                     userPreferencesRepository.setWallpaperPath(previewPath)
+                    userPreferencesRepository.setWallpaperType(previewType)
                     userPreferencesRepository.setPreviewPath(null)
                     previewPath
                 } else {
@@ -61,36 +50,20 @@ class VideoWallpaperService : WallpaperService() {
 
     override fun onCreateEngine(): Engine {
         return UnifiedWallpaperEngine(
-            wallpaperType = runBlocking {
-                userPreferencesRepository.getWallpaperType()
-            } ?: WallpaperType.IMAGE,
             settings = loadSettings()
         )
     }
 
     private fun loadSettings(): EngineSettings {
-        val settingsSP = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-
-        settingsScaleType =
-            settingsSP.getString(getString(R.string.keyGifScaleType), valueDefaultScaleType)!!
-        settingsAudio =
-            settingsSP.getBoolean(getString(R.string.keyVideoAudio), valueDefaultVideoAudio)
-        settingsDoubleTapToPause = settingsSP.getBoolean(
-            getString(R.string.keyDoubleTapToPause),
-            valueDefaultDoubleTapToPause
-        )
-        settingsPlayOffscreen =
-            settingsSP.getBoolean(getString(R.string.keyPlayOffscreen), valueDefaultPlayOffscreen)
-        settingsVideoCrop =
-            settingsSP.getBoolean(getString(R.string.keyCropVideo), valueDefaultVideoCrop)
-
-        return EngineSettings(
-            audio = settingsAudio,
-            videoCrop = settingsVideoCrop,
-            scaleType = settingsScaleType,
-            doubleTapToPause = settingsDoubleTapToPause,
-            playOffscreen = settingsPlayOffscreen
-        )
+        return runBlocking {
+            EngineSettings(
+                audio = userPreferencesRepository.getVideoAudio(),
+                videoCrop = userPreferencesRepository.getVideoCrop(),
+                scaleType = userPreferencesRepository.getGifScaleType(),
+                doubleTapToPause = userPreferencesRepository.getDoubleTapToPause(),
+                playOffscreen = userPreferencesRepository.getPlayOffscreen()
+            )
+        }
     }
 
     private fun createRenderer(
@@ -112,7 +85,6 @@ class VideoWallpaperService : WallpaperService() {
     }
 
     private inner class UnifiedWallpaperEngine(
-        private val wallpaperType: WallpaperType,
         private val settings: EngineSettings
     ) : Engine() {
         private var renderer: WallpaperRenderer? = null
@@ -126,13 +98,20 @@ class VideoWallpaperService : WallpaperService() {
 
             val surfaceHolder = holder ?: return
             val filePath = getActiveFilePath(isPreview) ?: return
+            val wallpaperType = runBlocking {
+                if (isPreview) {
+                    userPreferencesRepository.getPreviewWallpaperType()
+                } else {
+                    userPreferencesRepository.getWallpaperType()
+                }
+            }
             val file = File(filePath)
             if (!file.exists()) {
                 return
             }
 
             clearRenderer()
-            renderer = createRenderer(wallpaperType, surfaceHolder, file, settings)
+            renderer = createRenderer(wallpaperType!!, surfaceHolder, file, settings)
             renderer?.onSurfaceCreated()
             if (hasVisibilityState) {
                 renderer?.onVisibilityChanged(isVisibleToUser, isPaused)
@@ -149,7 +128,7 @@ class VideoWallpaperService : WallpaperService() {
         override fun onTouchEvent(event: MotionEvent?) {
             if (settings.doubleTapToPause && event?.actionMasked == MotionEvent.ACTION_DOWN) {
                 val currentTime = System.currentTimeMillis()
-                if (currentTime - tapTimeBetween <= doubleTapTimeout) {
+                if (currentTime - tapTimeBetween <= 500L) {
                     isPaused = !isPaused
                     renderer?.onPauseStateChanged(isPaused, isVisibleToUser)
                 }

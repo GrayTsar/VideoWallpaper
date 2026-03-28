@@ -3,16 +3,24 @@
     <string name="video">видео</string>
     <string name="image">фото</string>
 
-    <string name="all_settings">Настройки</string>
-
     <string name="error_image_open">Изображение не могло быть открыто</string>
     <string name="error_video_open">Видео не может быть открыто</string>
 
-    <string name="nameDarkMode">Dark Mode</string>
-    <string name="nameScaleType">Scale Type</string>
-    <string name="nameEnableAudio">Enable Audio</string>
-    <string name="nameDoubleTapToPause">Double Tap to Pause</string>
-    <string name="namePlayOffscreen">Play Offscreen</string>
-    <string name="summaryPlayOffscreen">Play when not visible or screen is off</string>
-    <string name="nameCropVideo">Crop Video</string>
+    <!-- settings -->
+    <string name="section_theme">Тема</string>
+    <string name="section_gif">GIF</string>
+    <string name="section_video">Видео</string>
+    <string name="section_general">Общее</string>
+    <string name="settings">Настройки</string>
+    <string name="dark_mode">Темный режим</string>
+    <string name="scale_type">Масштабирование</string>
+    <string name="enable_audio">Включить звук</string>
+    <string name="double_tap_to_pause">Двойное касание для паузы</string>
+    <string name="play_offscreen">Воспроизведение вне экрана</string>
+    <string name="summery_play_offscreen">Воспроизведение, когда видео не видно или экран выключен</string>
+    <string name="crop_video">Обрезать видео</string>
+    <!-- scale type -->
+    <string name="fit_to_screen">Подгонка под экран</string>
+    <string name="center">По центру</string>
+    <string name="original">Оригинал</string>
 </resources>

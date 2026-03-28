@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="@string/settings_section_theme"
+            android:text="@string/section_theme"
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="@color/accent" />
 
@@ -28,13 +28,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="@string/nameDarkMode" />
+            android:text="@string/dark_mode" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="@string/settings_section_gif"
+            android:text="@string/section_gif"
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="@color/accent" />
 
@@ -44,7 +44,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:hint="@string/nameScaleType">
+            android:hint="@string/scale_type">
 
             <com.google.android.material.textfield.MaterialAutoCompleteTextView
                 android:id="@+id/autoCompleteGifScaleType"
@@ -60,7 +60,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="@string/settings_section_video"
+            android:text="@string/section_video"
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="@color/accent" />
 
@@ -68,20 +68,20 @@
             android:id="@+id/switchVideoAudio"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/nameEnableAudio" />
+            android:text="@string/enable_audio" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchCropVideo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="@string/nameCropVideo" />
+            android:text="@string/crop_video" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="@string/settings_section_all"
+            android:text="@string/section_general"
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="@color/accent" />
 
@@ -89,18 +89,18 @@
             android:id="@+id/switchDoubleTapToPause"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/nameDoubleTapToPause" />
+            android:text="@string/double_tap_to_pause" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchPlayOffscreen"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/namePlayOffscreen" />
+            android:text="@string/play_offscreen" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/summaryPlayOffscreen"
+            android:text="@string/summery_play_offscreen"
             android:textAppearance="?attr/textAppearanceBodySmall" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

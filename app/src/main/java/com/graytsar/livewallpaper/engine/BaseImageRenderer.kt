@@ -3,7 +3,7 @@ package com.graytsar.livewallpaper.engine
 import android.graphics.Canvas
 import android.view.SurfaceHolder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.graytsar.livewallpaper.util.valueDefaultScaleType
+import com.graytsar.livewallpaper.util.GifScaleType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -102,10 +102,9 @@ abstract class BaseImageRenderer(
         val canvas = holder.lockCanvas() ?: return
         try {
             when (settings.scaleType) {
-                valueDefaultScaleType -> drawFit(canvas)
-                "center" -> drawCenter(canvas)
-                "original" -> drawOriginal(canvas)
-                else -> drawFit(canvas)
+                GifScaleType.FIT_TO_SCREEN -> drawFit(canvas)
+                GifScaleType.CENTER -> drawCenter(canvas)
+                GifScaleType.ORIGINAL -> drawOriginal(canvas)
             }
         } finally {
             holder.unlockCanvasAndPost(canvas)

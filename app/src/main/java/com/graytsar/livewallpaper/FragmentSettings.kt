@@ -5,41 +5,31 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.edit
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.PreferenceManager
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
 import com.graytsar.livewallpaper.databinding.FragmentSettingsBinding
-import com.graytsar.livewallpaper.repository.UserPreferencesRepository
 import com.graytsar.livewallpaper.util.GifScaleType
-import com.graytsar.livewallpaper.util.valueDefaultDarkMode
-import com.graytsar.livewallpaper.util.valueDefaultDoubleTapToPause
-import com.graytsar.livewallpaper.util.valueDefaultPlayOffscreen
-import com.graytsar.livewallpaper.util.valueDefaultScaleType
-import com.graytsar.livewallpaper.util.valueDefaultVideoAudio
-import com.graytsar.livewallpaper.util.valueDefaultVideoCrop
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class FragmentSettings : Fragment() {
+    val viewModel: ViewModelSettings by viewModels()
 
-    @Inject
-    lateinit var userPreferencesRepository: UserPreferencesRepository
-
-    lateinit var darkModeSwitch: SwitchMaterial
-    lateinit var gifScaleLayout: TextInputLayout
-    lateinit var gifScaleAutoComplete: MaterialAutoCompleteTextView
-    lateinit var videoAudioSwitch: SwitchMaterial
-    lateinit var videoCropSwitch: SwitchMaterial
-    lateinit var doubleTapToPauseSwitch: SwitchMaterial
-    lateinit var playOffscreenSwitch: SwitchMaterial
+    lateinit var switchDarkMode: SwitchMaterial
+    lateinit var layoutGifScale: TextInputLayout
+    lateinit var autoCompleteGifScale: MaterialAutoCompleteTextView
+    lateinit var switchVideoAudio: SwitchMaterial
+    lateinit var switchVideoCrop: SwitchMaterial
+    lateinit var switchDoubleTapToPause: SwitchMaterial
+    lateinit var switchPlayOffscreen: SwitchMaterial
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,37 +37,52 @@ class FragmentSettings : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         return FragmentSettingsBinding.inflate(inflater, container, false).apply {
-            darkModeSwitch = this.switchDarkMode
-            gifScaleLayout = this.inputLayoutGifScaleType
-            gifScaleAutoComplete = this.autoCompleteGifScaleType
-            videoAudioSwitch = this.switchVideoAudio
-            videoCropSwitch = this.switchCropVideo
-            doubleTapToPauseSwitch = this.switchDoubleTapToPause
-            playOffscreenSwitch = this.switchPlayOffscreen
+            this@FragmentSettings.switchDarkMode = this.switchDarkMode
+            this@FragmentSettings.layoutGifScale = this.inputLayoutGifScaleType
+            this@FragmentSettings.autoCompleteGifScale = this.autoCompleteGifScaleType
+            this@FragmentSettings.switchVideoAudio = this.switchVideoAudio
+            this@FragmentSettings.switchVideoCrop = this.switchCropVideo
+            this@FragmentSettings.switchDoubleTapToPause = this.switchDoubleTapToPause
+            this@FragmentSettings.switchPlayOffscreen = this.switchPlayOffscreen
         }.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val keyThemeDarkMode = getString(R.string.keyThemeDarkMode)
-        val keyGifScaleType = getString(R.string.keyGifScaleType)
-        val keyVideoAudio = getString(R.string.keyVideoAudio)
-        val keyCropVideo = getString(R.string.keyCropVideo)
-        val keyDoubleTapToPause = getString(R.string.keyDoubleTapToPause)
-        val keyPlayOffscreen = getString(R.string.keyPlayOffscreen)
+        val gifScaleTypes = GifScaleType.getTranslations().map {
+            requireContext().getString(it)
+        }
 
-        darkModeSwitch.apply {
-            isChecked = sharedPreferences.getBoolean(
-                keyThemeDarkMode,
-                valueDefaultDarkMode
-            )
+        autoCompleteGifScale.setSimpleItems(gifScaleTypes.toTypedArray())
+
+        runBlocking {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val settings = withContext(Dispatchers.IO) {
+                    SettingsUiState(
+                        darkMode = viewModel.userPreferencesRepository.getForceDarkMode(),
+                        gifScaleType = viewModel.userPreferencesRepository.getGifScaleType(),
+                        videoAudio = viewModel.userPreferencesRepository.getVideoAudio(),
+                        videoCrop = viewModel.userPreferencesRepository.getVideoCrop(),
+                        doubleTapToPause = viewModel.userPreferencesRepository.getDoubleTapToPause(),
+                        playOffscreen = viewModel.userPreferencesRepository.getPlayOffscreen()
+                    )
+                }
+
+                switchDarkMode.isChecked = settings.darkMode
+                switchVideoAudio.isChecked = settings.videoAudio
+                switchVideoCrop.isChecked = settings.videoCrop
+                switchDoubleTapToPause.isChecked = settings.doubleTapToPause
+                switchPlayOffscreen.isChecked = settings.playOffscreen
+                autoCompleteGifScale.setText(requireContext().getString(settings.gifScaleType.toTranslation()), false)
+            }
+        }
+
+        switchDarkMode.apply {
             setOnCheckedChangeListener { _, isChecked ->
-                sharedPreferences.edit { putBoolean(keyThemeDarkMode, isChecked) }
                 viewLifecycleOwner.lifecycleScope.launch {
                     withContext(Dispatchers.IO) {
-                        userPreferencesRepository.setForceDarkMode(isChecked)
+                        viewModel.userPreferencesRepository.setForceDarkMode(isChecked)
                     }
 
                     AppCompatDelegate.setDefaultNightMode(
@@ -93,63 +98,53 @@ class FragmentSettings : Fragment() {
             }
         }
 
-        gifScaleAutoComplete.apply {
-            val gifScaleTypes = GifScaleType.getTranslations()
-
-            val selectedScaleTypeValue = sharedPreferences.getString(
-                keyGifScaleType,
-                valueDefaultScaleType
-            ) ?: valueDefaultScaleType
-            val selectedScaleTypeIndex = gifScaleTypes.indexOf(selectedScaleTypeValue)
-                .takeIf { it >= 0 }
-                ?: 0
-
-            setSimpleItems(gifScaleTypes.toTypedArray())
-            setText(gifScaleTypes[selectedScaleTypeIndex], false)
+        autoCompleteGifScale.apply {
             setOnItemClickListener { _, _, position, _ ->
-                val selectedValue = gifScaleTypes.getOrElse(position) { valueDefaultScaleType }
-                sharedPreferences.edit { putString(keyGifScaleType, selectedValue) }
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setGifScaleType(GifScaleType.from(position))
+                }
             }
         }
 
-        videoAudioSwitch.apply {
-            isChecked = sharedPreferences.getBoolean(
-                keyVideoAudio,
-                valueDefaultVideoAudio
-            )
+        switchVideoAudio.apply {
             setOnCheckedChangeListener { _, isChecked ->
-                sharedPreferences.edit { putBoolean(keyVideoAudio, isChecked) }
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setVideoAudio(isChecked)
+                }
             }
         }
 
-        videoCropSwitch.apply {
-            isChecked = sharedPreferences.getBoolean(
-                keyCropVideo,
-                valueDefaultVideoCrop
-            )
+        switchVideoCrop.apply {
             setOnCheckedChangeListener { _, isChecked ->
-                sharedPreferences.edit { putBoolean(keyCropVideo, isChecked) }
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setVideoCrop(isChecked)
+                }
             }
         }
 
-        doubleTapToPauseSwitch.apply {
-            isChecked = sharedPreferences.getBoolean(
-                keyDoubleTapToPause,
-                valueDefaultDoubleTapToPause
-            )
+        switchDoubleTapToPause.apply {
             setOnCheckedChangeListener { _, isChecked ->
-                sharedPreferences.edit { putBoolean(keyDoubleTapToPause, isChecked) }
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setDoubleTapToPause(isChecked)
+                }
             }
         }
 
-        playOffscreenSwitch.apply {
-            isChecked = sharedPreferences.getBoolean(
-                keyPlayOffscreen,
-                valueDefaultPlayOffscreen
-            )
+        switchPlayOffscreen.apply {
             setOnCheckedChangeListener { _, isChecked ->
-                sharedPreferences.edit { putBoolean(keyPlayOffscreen, isChecked) }
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setPlayOffscreen(isChecked)
+                }
             }
         }
     }
+
+    private data class SettingsUiState(
+        val darkMode: Boolean = false,
+        val gifScaleType: GifScaleType = GifScaleType.FIT_TO_SCREEN,
+        val videoAudio: Boolean = false,
+        val videoCrop: Boolean = false,
+        val doubleTapToPause: Boolean = false,
+        val playOffscreen: Boolean = false
+    )
 }

@@ -14,6 +14,6 @@
     <fragment
         android:id="@+id/fragmentSettings"
         android:name="com.graytsar.livewallpaper.FragmentSettings"
-        android:label="@string/all_settings"
+        android:label="@string/settings"
         tools:layout="@layout/fragment_settings" />
 </navigation>
