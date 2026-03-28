@@ -23,11 +23,15 @@ class ViewModelPicker @Inject constructor(
     val wallpaperManager: WallpaperManager
 ) : ViewModel() {
 
+    /**
+     *
+     * @throws IllegalStateException if [MediaPlayer] creation failed
+     */
     fun validateVideo(uri: Uri, context: Context): Boolean {
         val mediaPlayer: MediaPlayer? = MediaPlayer.create(context, uri).apply {
             setVolume(0f, 0f)
         }
-        requireNotNull(mediaPlayer) { "Unable to create MediaPlayer for the provided URI" }
+        checkNotNull(mediaPlayer) { "Unable to create MediaPlayer for the provided URI" }
         mediaPlayer.release()
         return true
     }
@@ -40,6 +44,10 @@ class ViewModelPicker @Inject constructor(
         }
     }
 
+    /**
+     *
+     * @throws java.io.IOException if file is not found, is an unsupported format, or cannot be decoded for any reason.
+     */
     @RequiresApi(Build.VERSION_CODES.P)
     private fun validateImageNew(uri: Uri): Boolean {
         val source = ImageDecoder.createSource(contentResolver, uri)
@@ -47,6 +55,10 @@ class ViewModelPicker @Inject constructor(
         return true
     }
 
+    /**
+     *
+     * @throws IllegalArgumentException if the provided URI does not point to a valid image format.
+     */
     @Suppress("DEPRECATION")
     private fun validateImageLegacy(uri: Uri): Boolean {
         val movie = openInputStreamForContentResolver(uri).use { Movie.decodeStream(it) }
@@ -68,10 +80,16 @@ class ViewModelPicker @Inject constructor(
         return true
     }
 
+    /**
+     *
+     * @throws java.io.FileNotFoundException if the provided URI could not be opened.
+     * @throws java.io.IOException if an I/O error occurs.
+     * @throws IllegalStateException if the content provider is not responding or has recently crashed.
+     */
     fun openInputStreamForContentResolver(
         uri: Uri
     ): InputStream {
         val stream = contentResolver.openInputStream(uri)
-        return requireNotNull(stream) { "provider recently crashed" }
+        return checkNotNull(stream) { "provider recently crashed" }
     }
 }
