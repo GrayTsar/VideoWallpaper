@@ -2,6 +2,8 @@ package com.graytsar.livewallpaper.repository
 
 import androidx.datastore.core.DataStore
 import com.graytsar.livewallpaper.datastore.UserPreferencesData
+import com.graytsar.livewallpaper.datastore.WallpaperPreference
+import com.graytsar.livewallpaper.datastore.toDomain
 import com.graytsar.livewallpaper.datastore.toProto
 import com.graytsar.livewallpaper.util.GifScaleType
 import com.graytsar.livewallpaper.util.WallpaperType
@@ -90,4 +92,64 @@ class UserPreferencesRepository(
     suspend fun setPreviewWallpaperType(type: WallpaperType?) = dataStore.updateData {
         it.copy(previewWallpaperPreference = it.previewWallpaperPreference.copy(wallpaperType = type?.toProto()))
     }
+
+    suspend fun getEngineSettings() = dataStore.data.map {
+        it.enginePreference.toDomain()
+    }.first()
+
+    /**
+     * Resolves the selection that a wallpaper engine should render.
+     *
+     * Preview engines prefer preview data and fall back to the persisted wallpaper.
+     * Live engines consume any pending preview selection so the applied wallpaper is available
+     * immediately, even before the picker activity receives its result callback.
+     */
+    suspend fun resolveSelectionForEngine(isPreview: Boolean): WallpaperSelection? {
+        return if (isPreview) {
+            dataStore.data.map {
+                it.previewWallpaperPreference.toSelection() ?: it.wallpaperPreference.toSelection()
+            }.first()
+        } else {
+            dataStore.updateData {
+                val previewSelection = it.previewWallpaperPreference.toSelection()
+                if (previewSelection == null) {
+                    it
+                } else {
+                    it.copy(
+                        wallpaperPreference = it.previewWallpaperPreference,
+                        previewWallpaperPreference = WallpaperPreference()
+                    )
+                }
+            }.wallpaperPreference.toSelection()
+        }
+    }
+
+    suspend fun promotePreviewSelectionToWallpaper() = dataStore.updateData {
+        val previewSelection = it.previewWallpaperPreference
+        if (previewSelection.toSelection() == null) {
+            //no preview data exists
+            it
+        } else {
+            //copy preview data into live wallpaper data
+            it.copy(
+                wallpaperPreference = previewSelection,
+                previewWallpaperPreference = WallpaperPreference()
+            )
+        }
+    }
+
+    suspend fun clearPreviewData() = dataStore.updateData {
+        it.copy(previewWallpaperPreference = WallpaperPreference())
+    }
 }
+
+private fun WallpaperPreference.toSelection(): WallpaperSelection? {
+    val path = pathString ?: return null
+    val type = wallpaperType?.toDomain() ?: return null
+    return WallpaperSelection(path = path, wallpaperType = type)
+}
+
+data class WallpaperSelection(
+    val path: String,
+    val wallpaperType: WallpaperType
+)

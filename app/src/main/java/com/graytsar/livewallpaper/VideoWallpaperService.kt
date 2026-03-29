@@ -1,16 +1,10 @@
-@file:Suppress("DEPRECATION")
-
 package com.graytsar.livewallpaper
 
-import android.annotation.SuppressLint
-import android.graphics.Canvas
-import android.graphics.Rect
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.service.wallpaper.WallpaperService
 import android.view.MotionEvent
-import android.view.Surface
 import android.view.SurfaceHolder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.graytsar.livewallpaper.engine.Api28ImageRenderer
@@ -29,25 +23,6 @@ class VideoWallpaperService : WallpaperService() {
     @Inject
     lateinit var userPreferencesRepository: UserPreferencesRepository
 
-    private fun getActiveFilePath(isPreview: Boolean): String? {
-        return runBlocking {
-            if (isPreview) {
-                userPreferencesRepository.getPreviewPath() ?: userPreferencesRepository.getWallpaperPath()
-            } else {
-                val previewPath = userPreferencesRepository.getPreviewPath()
-                val previewType = userPreferencesRepository.getPreviewWallpaperType()
-                if (previewPath != null) {
-                    userPreferencesRepository.setWallpaperPath(previewPath)
-                    userPreferencesRepository.setWallpaperType(previewType)
-                    userPreferencesRepository.setPreviewPath(null)
-                    previewPath
-                } else {
-                    userPreferencesRepository.getWallpaperPath()
-                }
-            }
-        }
-    }
-
     override fun onCreateEngine(): Engine {
         return UnifiedWallpaperEngine(
             settings = loadSettings()
@@ -56,13 +31,7 @@ class VideoWallpaperService : WallpaperService() {
 
     private fun loadSettings(): EngineSettings {
         return runBlocking {
-            EngineSettings(
-                audio = userPreferencesRepository.getVideoAudio(),
-                videoCrop = userPreferencesRepository.getVideoCrop(),
-                scaleType = userPreferencesRepository.getGifScaleType(),
-                doubleTapToPause = userPreferencesRepository.getDoubleTapToPause(),
-                playOffscreen = userPreferencesRepository.getPlayOffscreen()
-            )
+            userPreferencesRepository.getEngineSettings()
         }
     }
 
@@ -97,21 +66,16 @@ class VideoWallpaperService : WallpaperService() {
             super.onSurfaceCreated(holder)
 
             val surfaceHolder = holder ?: return
-            val filePath = getActiveFilePath(isPreview) ?: return
-            val wallpaperType = runBlocking {
-                if (isPreview) {
-                    userPreferencesRepository.getPreviewWallpaperType()
-                } else {
-                    userPreferencesRepository.getWallpaperType()
-                }
-            }
-            val file = File(filePath)
+            val selection = runBlocking {
+                userPreferencesRepository.resolveSelectionForEngine(isPreview)
+            } ?: return
+            val file = File(selection.path)
             if (!file.exists()) {
                 return
             }
 
             clearRenderer()
-            renderer = createRenderer(wallpaperType!!, surfaceHolder, file, settings)
+            renderer = createRenderer(selection.wallpaperType, surfaceHolder, file, settings)
             renderer?.onSurfaceCreated()
             if (hasVisibilityState) {
                 renderer?.onVisibilityChanged(isVisibleToUser, isPaused)
@@ -160,97 +124,115 @@ class VideoWallpaperService : WallpaperService() {
         private val settings: EngineSettings
     ) : WallpaperRenderer {
         private var mediaPlayer: MediaPlayer? = null
+        private var isPrepared: Boolean = false
+        private var isReleased: Boolean = false
+        private var hasPendingPlaybackState: Boolean = false
+        private var pendingVisibility: Boolean = false
+        private var pendingPauseState: Boolean = false
 
         override fun onSurfaceCreated() {
             try {
-                mediaPlayer = MediaPlayer.create(
-                    this@VideoWallpaperService,
-                    Uri.fromFile(file),
-                    VideoWallpaperSurfaceHolder(holder)
-                )
-                mediaPlayer?.isLooping = true
+                isReleased = false
+                isPrepared = false
+                hasPendingPlaybackState = false
+                val videoScalingMode = if (settings.videoCrop)
+                    MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
+                else
+                    MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT
+                val volume = if (settings.audio) 1.0f else 0.0f
 
-                if (settings.videoCrop) {
-                    mediaPlayer?.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
-                }
+                mediaPlayer = MediaPlayer().apply {
+                    setOnPreparedListener { preparedPlayer ->
+                        if (isReleased || mediaPlayer !== preparedPlayer) {
+                            return@setOnPreparedListener
+                        }
 
-                if (!settings.audio) {
-                    mediaPlayer?.setVolume(0.0f, 0.0f)
+                        isPrepared = true
+                        applyPendingPlaybackState()
+                    }
+                    setOnErrorListener { mp, what, extra ->
+                        FirebaseCrashlytics.getInstance().log("MediaPlayer Error: what=$what extra=$extra")
+                        release()
+                        true
+                    }
+                    setDataSource(this@VideoWallpaperService, Uri.fromFile(file))
+                    setSurface(holder.surface)
+                    isLooping = true
+                    setVideoScalingMode(videoScalingMode)
+                    setVolume(volume, volume)
+                    prepareAsync()
                 }
             } catch (e: Exception) {
+                release()
                 FirebaseCrashlytics.getInstance().recordException(e)
             }
         }
 
         override fun onVisibilityChanged(isVisible: Boolean, isPaused: Boolean) {
-            applyPlaybackState(isVisible, isPaused)
+            updatePlaybackState(isVisible, isPaused)
         }
 
         override fun onPauseStateChanged(isPaused: Boolean, isVisible: Boolean) {
-            applyPlaybackState(isVisible, isPaused)
+            updatePlaybackState(isVisible, isPaused)
         }
 
         override fun release() {
-            mediaPlayer?.stop()
-            mediaPlayer?.release()
-            mediaPlayer = null
-        }
+            isReleased = true
+            hasPendingPlaybackState = false
 
-        private fun applyPlaybackState(visible: Boolean, isPaused: Boolean) {
-            if (!settings.playOffscreen) {
-                if (!isPaused && visible) {
-                    mediaPlayer?.start()
-                } else {
-                    mediaPlayer?.pause()
-                }
-            } else {
-                if (isPaused) {
-                    mediaPlayer?.pause()
-                } else {
-                    mediaPlayer?.start()
+            val player = mediaPlayer ?: return
+            val wasPrepared = isPrepared
+
+            mediaPlayer = null
+            isPrepared = false
+
+            if (wasPrepared) {
+                runCatching {
+                    player.stop()
+                }.onFailure { error ->
+                    FirebaseCrashlytics.getInstance().recordException(error)
                 }
             }
+
+            runCatching {
+                player.release()
+            }.onFailure { error ->
+                FirebaseCrashlytics.getInstance().recordException(error)
+            }
         }
-    }
-}
 
-class VideoWallpaperSurfaceHolder(private val holder: SurfaceHolder) : SurfaceHolder {
-    @Suppress("DEPRECATION")
-    @SuppressLint("ObsoleteSdkInt")
-    @Deprecated("Deprecated in Java")
-    override fun setType(type: Int) {
-        if (Build.VERSION.SDK_INT <= 11) {
-            holder.setType(type)
+        private fun updatePlaybackState(visible: Boolean, isPaused: Boolean) {
+            pendingVisibility = visible
+            pendingPauseState = isPaused
+            hasPendingPlaybackState = true
+            applyPendingPlaybackState()
         }
-    }
 
-    override fun getSurface(): Surface = holder.surface
-    override fun setSizeFromLayout() {
-        holder.setSizeFromLayout()
-    }
+        private fun applyPendingPlaybackState() {
+            val player = mediaPlayer ?: return
+            if (!isPrepared || isReleased || !hasPendingPlaybackState) {
+                return
+            }
 
-    override fun lockCanvas(): Canvas = holder.lockCanvas()
-    override fun lockCanvas(dirty: Rect?): Canvas = holder.lockCanvas(dirty)
-    override fun getSurfaceFrame(): Rect = holder.surfaceFrame
-    override fun setFixedSize(width: Int, height: Int) {
-        holder.setFixedSize(width, height)
-    }
+            val isUserPaused = pendingPauseState
+            val isHidden = !pendingVisibility
 
-    override fun removeCallback(callback: SurfaceHolder.Callback?) {
-        holder.removeCallback(callback)
-    }
-
-    override fun isCreating(): Boolean = holder.isCreating
-    override fun addCallback(callback: SurfaceHolder.Callback?) {
-        holder.addCallback(callback)
-    }
-
-    override fun setFormat(format: Int) {
-        holder.setFormat(format)
-    }
-
-    override fun setKeepScreenOn(screenOn: Boolean) {}
-    override fun unlockCanvasAndPost(canvas: Canvas?) {
-        holder.unlockCanvasAndPost(canvas)
+            val shouldPlay = when {
+                isUserPaused -> false
+                settings.playOffscreen -> true
+                else -> !isHidden
+            }
+            runCatching {
+                if (shouldPlay) {
+                    if (!player.isPlaying) {
+                        player.start()
+                    }
+                } else if (player.isPlaying) {
+                    player.pause()
+                }
+            }.onFailure { error ->
+                FirebaseCrashlytics.getInstance().recordException(error)
+            }
+        }
     }
 }

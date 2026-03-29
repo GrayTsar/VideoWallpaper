@@ -7,6 +7,7 @@ import com.graytsar.livewallpaper.datastore.GifScaleTypeProto.FIT_TO_SCREEN
 import com.graytsar.livewallpaper.datastore.GifScaleTypeProto.ORIGINAL
 import com.graytsar.livewallpaper.datastore.WallpaperTypeProto.IMAGE
 import com.graytsar.livewallpaper.datastore.WallpaperTypeProto.VIDEO
+import com.graytsar.livewallpaper.engine.EngineSettings
 import com.graytsar.livewallpaper.util.GifScaleType
 import com.graytsar.livewallpaper.util.WallpaperType
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -55,6 +56,14 @@ data class EnginePreference(
     val isDoubleTapToPauseEnabled: Boolean = false,
     @property:ProtoNumber(5)
     val isPlayOffscreenEnabled: Boolean = false
+)
+
+fun EnginePreference.toDomain() = EngineSettings(
+    audio = isVideoAudioEnabled,
+    videoCrop = videoCrop,
+    scaleType = gifScaleType.toDomain(),
+    doubleTapToPause = isDoubleTapToPauseEnabled,
+    playOffscreen = isPlayOffscreenEnabled
 )
 
 @Serializable

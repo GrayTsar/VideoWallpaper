@@ -40,10 +40,7 @@ class FragmentPicker : Fragment() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 runBlocking(Dispatchers.IO) {
-                    val previewPath = viewModel.userPreferencesRepository.getPreviewPath()
-                    val previewType = viewModel.userPreferencesRepository.getPreviewWallpaperType()
-                    viewModel.userPreferencesRepository.setWallpaperPath(previewPath)
-                    viewModel.userPreferencesRepository.setWallpaperType(previewType)
+                    viewModel.userPreferencesRepository.promotePreviewSelectionToWallpaper()
                 }
             } else {
                 runBlocking(Dispatchers.IO) {
@@ -51,7 +48,7 @@ class FragmentPicker : Fragment() {
                     if (previewPath != null) {
                         File(previewPath).delete()
                     }
-                    viewModel.userPreferencesRepository.setPreviewPath(null)
+                    viewModel.userPreferencesRepository.clearPreviewData()
                 }
             }
         }
