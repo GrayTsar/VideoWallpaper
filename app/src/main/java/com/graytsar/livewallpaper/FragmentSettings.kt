@@ -12,7 +12,8 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
 import com.graytsar.livewallpaper.databinding.FragmentSettingsBinding
-import com.graytsar.livewallpaper.util.GifScaleType
+import com.graytsar.livewallpaper.util.ImageScaling
+import com.graytsar.livewallpaper.util.VideoScaling
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,10 +25,11 @@ class FragmentSettings : Fragment() {
     val viewModel: ViewModelSettings by viewModels()
 
     lateinit var switchDarkMode: SwitchMaterial
-    lateinit var layoutGifScale: TextInputLayout
-    lateinit var autoCompleteGifScale: MaterialAutoCompleteTextView
+    lateinit var layoutImageScaling: TextInputLayout
+    lateinit var autoCompleteImageScaling: MaterialAutoCompleteTextView
     lateinit var switchVideoAudio: SwitchMaterial
-    lateinit var switchVideoCrop: SwitchMaterial
+    lateinit var layoutVideoScaling: TextInputLayout
+    lateinit var autoCompleteVideoScaling: MaterialAutoCompleteTextView
     lateinit var switchDoubleTapToPause: SwitchMaterial
     lateinit var switchPlayOffscreen: SwitchMaterial
 
@@ -38,10 +40,11 @@ class FragmentSettings : Fragment() {
     ): View {
         return FragmentSettingsBinding.inflate(inflater, container, false).apply {
             this@FragmentSettings.switchDarkMode = this.switchDarkMode
-            this@FragmentSettings.layoutGifScale = this.inputLayoutGifScaleType
-            this@FragmentSettings.autoCompleteGifScale = this.autoCompleteGifScaleType
+            this@FragmentSettings.layoutImageScaling = this.inputLayoutImageScaling
+            this@FragmentSettings.autoCompleteImageScaling = this.autoCompleteImageScaling
             this@FragmentSettings.switchVideoAudio = this.switchVideoAudio
-            this@FragmentSettings.switchVideoCrop = this.switchCropVideo
+            this@FragmentSettings.layoutVideoScaling = this.inputLayoutVideoScaling
+            this@FragmentSettings.autoCompleteVideoScaling = this.autoCompleteVideoScaling
             this@FragmentSettings.switchDoubleTapToPause = this.switchDoubleTapToPause
             this@FragmentSettings.switchPlayOffscreen = this.switchPlayOffscreen
         }.root
@@ -50,31 +53,41 @@ class FragmentSettings : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val gifScaleTypes = GifScaleType.getTranslations().map {
+        val imageScalingTypes = ImageScaling.getTranslations().map {
+            requireContext().getString(it)
+        }
+        val videoScalingTypes = VideoScaling.getTranslations().map {
             requireContext().getString(it)
         }
 
-        autoCompleteGifScale.setSimpleItems(gifScaleTypes.toTypedArray())
+        autoCompleteImageScaling.setSimpleItems(imageScalingTypes.toTypedArray())
+        autoCompleteVideoScaling.setSimpleItems(videoScalingTypes.toTypedArray())
 
         runBlocking {
             viewLifecycleOwner.lifecycleScope.launch {
                 val settings = withContext(Dispatchers.IO) {
                     SettingsUiState(
                         darkMode = viewModel.userPreferencesRepository.getForceDarkMode(),
-                        gifScaleType = viewModel.userPreferencesRepository.getGifScaleType(),
+                        imageScaling = viewModel.userPreferencesRepository.getImageScaleType(),
                         videoAudio = viewModel.userPreferencesRepository.getVideoAudio(),
-                        videoCrop = viewModel.userPreferencesRepository.getVideoCrop(),
+                        videoScaling = viewModel.userPreferencesRepository.getVideoScaling(),
                         doubleTapToPause = viewModel.userPreferencesRepository.getDoubleTapToPause(),
                         playOffscreen = viewModel.userPreferencesRepository.getPlayOffscreen()
                     )
                 }
 
                 switchDarkMode.isChecked = settings.darkMode
+                autoCompleteImageScaling.setText(
+                    requireContext().getString(settings.imageScaling.toTranslation()),
+                    false
+                )
                 switchVideoAudio.isChecked = settings.videoAudio
-                switchVideoCrop.isChecked = settings.videoCrop
                 switchDoubleTapToPause.isChecked = settings.doubleTapToPause
                 switchPlayOffscreen.isChecked = settings.playOffscreen
-                autoCompleteGifScale.setText(requireContext().getString(settings.gifScaleType.toTranslation()), false)
+                autoCompleteVideoScaling.setText(
+                    requireContext().getString(settings.videoScaling.toTranslation()),
+                    false
+                )
             }
         }
 
@@ -98,10 +111,10 @@ class FragmentSettings : Fragment() {
             }
         }
 
-        autoCompleteGifScale.apply {
+        autoCompleteImageScaling.apply {
             setOnItemClickListener { _, _, position, _ ->
                 viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                    viewModel.userPreferencesRepository.setGifScaleType(GifScaleType.from(position))
+                    viewModel.userPreferencesRepository.setImageScaleType(ImageScaling.from(position))
                 }
             }
         }
@@ -114,10 +127,11 @@ class FragmentSettings : Fragment() {
             }
         }
 
-        switchVideoCrop.apply {
-            setOnCheckedChangeListener { _, isChecked ->
+
+        autoCompleteVideoScaling.apply {
+            setOnItemClickListener { _, _, position, _ ->
                 viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                    viewModel.userPreferencesRepository.setVideoCrop(isChecked)
+                    viewModel.userPreferencesRepository.setVideoScaling(VideoScaling.from(position))
                 }
             }
         }
@@ -141,9 +155,9 @@ class FragmentSettings : Fragment() {
 
     private data class SettingsUiState(
         val darkMode: Boolean = false,
-        val gifScaleType: GifScaleType = GifScaleType.FIT_TO_SCREEN,
+        val imageScaling: ImageScaling = ImageScaling.FIT_TO_SCREEN,
         val videoAudio: Boolean = false,
-        val videoCrop: Boolean = false,
+        val videoScaling: VideoScaling = VideoScaling.FIT_CROP,
         val doubleTapToPause: Boolean = false,
         val playOffscreen: Boolean = false
     )

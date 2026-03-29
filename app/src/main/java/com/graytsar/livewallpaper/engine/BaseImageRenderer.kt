@@ -1,16 +1,19 @@
 package com.graytsar.livewallpaper.engine
 
 import android.graphics.Canvas
+import android.graphics.Color
 import android.view.SurfaceHolder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.graytsar.livewallpaper.util.GifScaleType
+import com.graytsar.livewallpaper.util.ImageScaling
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.File
 
 abstract class BaseImageRenderer(
@@ -23,7 +26,7 @@ abstract class BaseImageRenderer(
     private var isPaused: Boolean = false
     private val rendererScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    final override fun onSurfaceCreated() {
+    final override fun onSurfaceReady() {
         loadContent(file)
         restartDrawing()
     }
@@ -33,12 +36,12 @@ abstract class BaseImageRenderer(
         onImageVisibilityChanged(isVisible)
 
         if (isVisible) {
-            if (settings.playOffscreen) {
+            if (settings.general.playOffscreen) {
                 startDrawingIfNeeded()
             } else {
                 restartDrawing()
             }
-        } else if (!settings.playOffscreen) {
+        } else if (!settings.general.playOffscreen) {
             stopDrawing()
         }
     }
@@ -79,7 +82,7 @@ abstract class BaseImageRenderer(
 
     private fun stopDrawing() {
         shouldDraw = false
-        drawJob?.cancel()
+        runBlocking { drawJob?.cancelAndJoin() }
         drawJob = null
     }
 
@@ -90,7 +93,7 @@ abstract class BaseImageRenderer(
                     if (!isPaused) {
                         drawFrame()
                     }
-                    delay(7)
+                    delay(16)
                 }
             } catch (e: Exception) {
                 FirebaseCrashlytics.getInstance().recordException(e)
@@ -99,12 +102,15 @@ abstract class BaseImageRenderer(
     }
 
     private fun drawFrame() {
+        //if (!holder.surface.isValid) return
         val canvas = holder.lockCanvas() ?: return
+        //reset canvas state
+        canvas.drawColor(Color.BLACK)
         try {
-            when (settings.scaleType) {
-                GifScaleType.FIT_TO_SCREEN -> drawFit(canvas)
-                GifScaleType.CENTER -> drawCenter(canvas)
-                GifScaleType.ORIGINAL -> drawOriginal(canvas)
+            when (settings.image.scaleType) {
+                ImageScaling.FIT_TO_SCREEN -> drawFit(canvas)
+                ImageScaling.CENTER -> drawCenter(canvas)
+                ImageScaling.ORIGINAL -> drawOriginal(canvas)
             }
         } finally {
             holder.unlockCanvasAndPost(canvas)

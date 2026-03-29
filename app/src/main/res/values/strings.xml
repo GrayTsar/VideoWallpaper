@@ -20,7 +20,8 @@
     <string name="summery_play_offscreen">Play when not visible or screen is off</string>
     <string name="crop_video">Crop video</string>
     <!-- scale type -->
-    <string name="fit_to_screen">Crop video</string>
+    <string name="fit_crop">Fit crop</string>
+    <string name="fit_to_screen">Fit to screen</string>
     <string name="center">Center</string>
     <string name="original">Original</string>
 </resources>

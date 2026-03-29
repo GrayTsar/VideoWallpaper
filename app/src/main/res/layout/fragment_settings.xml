@@ -39,7 +39,7 @@
             android:textColor="@color/accent" />
 
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/inputLayoutGifScaleType"
+            android:id="@+id/inputLayoutImageScaling"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -47,13 +47,13 @@
             android:hint="@string/scale_type">
 
             <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                android:id="@+id/autoCompleteGifScaleType"
+                android:id="@+id/autoCompleteImageScaling"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:cursorVisible="false"
                 android:focusable="false"
                 android:inputType="none"
-                tools:text="Fit to Screen" />
+                tools:text="@string/fit_to_screen" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
@@ -70,12 +70,23 @@
             android:layout_height="wrap_content"
             android:text="@string/enable_audio" />
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switchCropVideo"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/inputLayoutVideoScaling"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="@string/crop_video" />
+            android:hint="@string/scale_type">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/autoCompleteVideoScaling"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:cursorVisible="false"
+                android:focusable="false"
+                android:inputType="none"
+                tools:text="@string/fit_crop" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             android:layout_width="match_parent"

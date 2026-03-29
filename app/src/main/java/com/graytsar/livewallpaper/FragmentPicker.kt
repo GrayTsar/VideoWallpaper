@@ -59,7 +59,7 @@ class FragmentPicker : Fragment() {
     private val videoLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { result ->
             val videoUri: Uri = result ?: return@registerForActivityResult
-            val result = viewModel.validateVideo(videoUri, requireContext())
+            val result = runCatching { viewModel.validateVideo(videoUri, requireContext()) }.getOrElse { false }
             if (result) {
                 val path = saveVideo(videoUri)
                 saveSelection(path!!, WallpaperType.VIDEO)
@@ -75,7 +75,7 @@ class FragmentPicker : Fragment() {
     private val imageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { result ->
             val imageUri: Uri = result ?: return@registerForActivityResult
-            val result = viewModel.validateImage(imageUri)
+            val result = runCatching { viewModel.validateImage(imageUri) }.getOrElse { false }
             if (result) {
                 val path = saveImage(imageUri)
                 saveSelection(path!!, WallpaperType.IMAGE)
@@ -138,6 +138,7 @@ class FragmentPicker : Fragment() {
 
     private fun launchVideoWallpaperService() {
         try {
+            viewModel.wallpaperManager.clear()
             wallpaperLauncher.launch(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
                 putExtra(
                     WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
@@ -145,6 +146,7 @@ class FragmentPicker : Fragment() {
                 )
             })
         } catch (e: ActivityNotFoundException) {
+            Snackbar.make(requireView(), "could not set wallpaper", Snackbar.LENGTH_SHORT).show()
             FirebaseCrashlytics.getInstance().recordException(e)
         }
     }

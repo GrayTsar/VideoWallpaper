@@ -1,12 +1,17 @@
 package com.graytsar.livewallpaper.repository
 
 import androidx.datastore.core.DataStore
+import com.graytsar.livewallpaper.datastore.LivePreference
 import com.graytsar.livewallpaper.datastore.UserPreferencesData
-import com.graytsar.livewallpaper.datastore.WallpaperPreference
 import com.graytsar.livewallpaper.datastore.toDomain
 import com.graytsar.livewallpaper.datastore.toProto
-import com.graytsar.livewallpaper.util.GifScaleType
+import com.graytsar.livewallpaper.engine.EngineSettings
+import com.graytsar.livewallpaper.util.ImageScaling
+import com.graytsar.livewallpaper.util.VideoScaling
+import com.graytsar.livewallpaper.util.WallpaperFlag
 import com.graytsar.livewallpaper.util.WallpaperType
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
@@ -17,139 +22,121 @@ class UserPreferencesRepository(
         it.appPreference.forceDarkMode
     }.first()
 
-    suspend fun setForceDarkMode(enabled: Boolean) = dataStore.updateData {
+    suspend fun setForceDarkMode(enabled: Boolean) = update {
         it.copy(appPreference = it.appPreference.copy(forceDarkMode = enabled))
     }
 
-    suspend fun getGifScaleType() = dataStore.data.map {
-        it.enginePreference.gifScaleType.toDomain()
+
+    suspend fun getImageScaleType() = dataStore.data.map {
+        it.imagePreference.scaling.toDomain()
     }.first()
 
-    suspend fun setGifScaleType(type: GifScaleType) = dataStore.updateData {
-        it.copy(enginePreference = it.enginePreference.copy(gifScaleType = type.toProto()))
+    suspend fun setImageScaleType(type: ImageScaling) = update {
+        it.copy(imagePreference = it.imagePreference.copy(scaling = type.toProto()))
     }
+
 
     suspend fun getVideoAudio() = dataStore.data.map {
-        it.enginePreference.isVideoAudioEnabled
+        it.videoPreference.isAudioEnabled
     }.first()
 
-    suspend fun setVideoAudio(enabled: Boolean) = dataStore.updateData {
-        it.copy(enginePreference = it.enginePreference.copy(isVideoAudioEnabled = enabled))
+    suspend fun setVideoAudio(enabled: Boolean) = update {
+        it.copy(videoPreference = it.videoPreference.copy(isAudioEnabled = enabled))
     }
 
-    suspend fun getVideoCrop() = dataStore.data.map {
-        it.enginePreference.videoCrop
+
+    suspend fun getVideoScaling() = dataStore.data.map {
+        it.videoPreference.scaling.toDomain()
     }.first()
 
-    suspend fun setVideoCrop(enabled: Boolean) = dataStore.updateData {
-        it.copy(enginePreference = it.enginePreference.copy(videoCrop = enabled))
+    suspend fun setVideoScaling(scaling: VideoScaling) = update {
+        it.copy(videoPreference = it.videoPreference.copy(scaling = scaling.toProto()))
     }
+
 
     suspend fun getDoubleTapToPause() = dataStore.data.map {
-        it.enginePreference.isDoubleTapToPauseEnabled
+        it.generalPreference.isDoubleTapToPauseEnabled
     }.first()
 
-    suspend fun setDoubleTapToPause(enabled: Boolean) = dataStore.updateData {
-        it.copy(enginePreference = it.enginePreference.copy(isDoubleTapToPauseEnabled = enabled))
+    suspend fun setDoubleTapToPause(enabled: Boolean) = update {
+        it.copy(generalPreference = it.generalPreference.copy(isDoubleTapToPauseEnabled = enabled))
     }
+
 
     suspend fun getPlayOffscreen() = dataStore.data.map {
-        it.enginePreference.isPlayOffscreenEnabled
+        it.generalPreference.isPlayOffscreenEnabled
     }.first()
 
-    suspend fun setPlayOffscreen(enabled: Boolean) = dataStore.updateData {
-        it.copy(enginePreference = it.enginePreference.copy(isPlayOffscreenEnabled = enabled))
+    suspend fun setPlayOffscreen(enabled: Boolean) = update {
+        it.copy(generalPreference = it.generalPreference.copy(isPlayOffscreenEnabled = enabled))
     }
 
-    suspend fun getWallpaperType() = dataStore.data.map {
-        it.wallpaperPreference.wallpaperType?.toDomain()
-    }.first()
-
-    suspend fun setWallpaperType(type: WallpaperType?) = dataStore.updateData {
-        it.copy(wallpaperPreference = it.wallpaperPreference.copy(wallpaperType = type?.toProto()))
-    }
 
     suspend fun getWallpaperPath() = dataStore.data.map {
-        it.wallpaperPreference.pathString
+        it.livePreference.firstOrNull()?.path
     }.first()
 
-    suspend fun setWallpaperPath(path: String?) = dataStore.updateData {
-        it.copy(wallpaperPreference = it.wallpaperPreference.copy(pathString = path))
-    }
 
     suspend fun getPreviewPath() = dataStore.data.map {
-        it.previewWallpaperPreference.pathString
+        it.previewPreference.path
     }.first()
 
-    suspend fun setPreviewPath(path: String?) = dataStore.updateData {
-        it.copy(previewWallpaperPreference = it.previewWallpaperPreference.copy(pathString = path))
+    suspend fun setPreviewPath(path: String?) = update {
+        it.copy(previewPreference = it.previewPreference.copy(path = path))
     }
 
-    suspend fun getPreviewWallpaperType() = dataStore.data.map {
-        it.previewWallpaperPreference.wallpaperType?.toDomain()
-    }.first()
 
-    suspend fun setPreviewWallpaperType(type: WallpaperType?) = dataStore.updateData {
-        it.copy(previewWallpaperPreference = it.previewWallpaperPreference.copy(wallpaperType = type?.toProto()))
+    suspend fun setPreviewWallpaperType(type: WallpaperType) = update {
+        it.copy(previewPreference = it.previewPreference.copy(type = type.toProto()))
     }
 
-    suspend fun getEngineSettings() = dataStore.data.map {
-        it.enginePreference.toDomain()
-    }.first()
+    fun getEngineSettingsFlow(): Flow<EngineSettings> = dataStore.data.map {
+        it.toDomain()
+    }.distinctUntilChanged()
 
-    /**
-     * Resolves the selection that a wallpaper engine should render.
-     *
-     * Preview engines prefer preview data and fall back to the persisted wallpaper.
-     * Live engines consume any pending preview selection so the applied wallpaper is available
-     * immediately, even before the picker activity receives its result callback.
-     */
-    suspend fun resolveSelectionForEngine(isPreview: Boolean): WallpaperSelection? {
-        return if (isPreview) {
-            dataStore.data.map {
-                it.previewWallpaperPreference.toSelection() ?: it.wallpaperPreference.toSelection()
-            }.first()
-        } else {
-            dataStore.updateData {
-                val previewSelection = it.previewWallpaperPreference.toSelection()
-                if (previewSelection == null) {
-                    it
-                } else {
-                    it.copy(
-                        wallpaperPreference = it.previewWallpaperPreference,
-                        previewWallpaperPreference = WallpaperPreference()
-                    )
-                }
-            }.wallpaperPreference.toSelection()
-        }
+    fun getWallpaperSelectionFlow(isPreview: Boolean): Flow<WallpaperSelection?> {
+        return dataStore.data.map {
+            if (isPreview) {
+                it.previewPreference.toSelection() ?: it.livePreference.firstOrNull()?.toSelection()
+            } else {
+                it.livePreference.firstOrNull()?.toSelection()
+            }
+        }.distinctUntilChanged()
     }
 
-    suspend fun promotePreviewSelectionToWallpaper() = dataStore.updateData {
-        val previewSelection = it.previewWallpaperPreference
+    suspend fun promotePreviewSelectionToWallpaper() = update { data ->
+        val previewSelection = data.previewPreference
         if (previewSelection.toSelection() == null) {
             //no preview data exists
-            it
+            data
         } else {
             //copy preview data into live wallpaper data
-            it.copy(
-                wallpaperPreference = previewSelection,
-                previewWallpaperPreference = WallpaperPreference()
+            val newList = data.livePreference.filter { it.flag != previewSelection.flag } + previewSelection
+            data.copy(
+                livePreference = newList,
+                previewPreference = LivePreference() // Reset preview after promotion
             )
         }
     }
 
-    suspend fun clearPreviewData() = dataStore.updateData {
-        it.copy(previewWallpaperPreference = WallpaperPreference())
+    suspend fun clearPreviewData() = update {
+        it.copy(previewPreference = LivePreference())
+    }
+
+    private suspend fun update(transform: suspend (UserPreferencesData) -> UserPreferencesData) {
+        dataStore.updateData { transform(it) }
     }
 }
 
-private fun WallpaperPreference.toSelection(): WallpaperSelection? {
-    val path = pathString ?: return null
-    val type = wallpaperType?.toDomain() ?: return null
-    return WallpaperSelection(path = path, wallpaperType = type)
+private fun LivePreference.toSelection(): WallpaperSelection? {
+    val path = path ?: return null
+    val type = type?.toDomain() ?: return null
+    val flag = flag.toDomain()
+    return WallpaperSelection(flag = flag, path = path, type = type)
 }
 
 data class WallpaperSelection(
+    val flag: WallpaperFlag,
     val path: String,
-    val wallpaperType: WallpaperType
+    val type: WallpaperType
 )

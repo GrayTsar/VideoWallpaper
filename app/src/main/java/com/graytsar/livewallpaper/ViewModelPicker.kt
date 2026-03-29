@@ -28,6 +28,7 @@ class ViewModelPicker @Inject constructor(
      * @throws IllegalStateException if [MediaPlayer] creation failed
      */
     fun validateVideo(uri: Uri, context: Context): Boolean {
+        //MediaMetadataRetriever
         val mediaPlayer: MediaPlayer? = MediaPlayer.create(context, uri).apply {
             setVolume(0f, 0f)
         }
