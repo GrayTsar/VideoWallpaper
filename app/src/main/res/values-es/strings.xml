@@ -3,16 +3,24 @@
     <string name="video">Video</string>
     <string name="image">Imagen</string>
 
-    <string name="all_settings">ajustes</string>
-
     <string name="error_image_open">No se podía abrir la imagen</string>
     <string name="error_video_open">No se podía abrir el video</string>
 
-    <string name="nameDarkMode">modo nocturno</string>
-    <string name="nameScaleType">Scale Type</string>
-    <string name="nameEnableAudio">Habilité los audio</string>
-    <string name="nameDoubleTapToPause">Double Tap to Pause</string>
-    <string name="namePlayOffscreen">Play Offscreen</string>
-    <string name="summaryPlayOffscreen">Play when not visible or screen is off</string>
-    <string name="nameCropVideo">Crop Video</string>
+    <!-- settings -->
+    <string name="section_theme">Tema</string>
+    <string name="section_gif">GIF</string>
+    <string name="section_video">Video</string>
+    <string name="section_general">General</string>
+    <string name="settings">Ajustes</string>
+    <string name="dark_mode">Modo oscuro</string>
+    <string name="scale_type">Escalado</string>
+    <string name="enable_audio">Activar audio</string>
+    <string name="double_tap_to_pause">Pausar con doble toque</string>
+    <string name="play_offscreen">Reproducir fuera de pantalla</string>
+    <string name="summery_play_offscreen">Reproducir cuando no se ve o la pantalla está apagada</string>
+    <string name="crop_video">Recortar vídeo</string>
+    <!-- scale type -->
+    <string name="fit_to_screen">Ajustar a la pantalla</string>
+    <string name="center">Centrar</string>
+    <string name="original">Original</string>
 </resources>

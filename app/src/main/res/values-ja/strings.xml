@@ -3,16 +3,24 @@
     <string name="video">ビデオ</string>
     <string name="image">イメージ</string>
 
-    <string name="all_settings">設定</string>
-
     <string name="error_image_open">画像を開けませんでした</string>
     <string name="error_video_open">ビデオを開けませんでした</string>
 
-    <string name="nameDarkMode">Dark Mode</string>
-    <string name="nameScaleType">Scale Type</string>
-    <string name="nameEnableAudio">Enable Audio</string>
-    <string name="nameDoubleTapToPause">Double Tap to Pause</string>
-    <string name="namePlayOffscreen">Play Offscreen</string>
-    <string name="summaryPlayOffscreen">Play when not visible or screen is off</string>
-    <string name="nameCropVideo">Crop Video</string>
+    <!-- settings -->
+    <string name="section_theme">テーマ</string>
+    <string name="section_gif">GIF</string>
+    <string name="section_video">動画</string>
+    <string name="section_general">全般</string>
+    <string name="settings">設定</string>
+    <string name="dark_mode">ダークモード</string>
+    <string name="scale_type">拡大縮小</string>
+    <string name="enable_audio">音声を有効にする</string>
+    <string name="double_tap_to_pause">ダブルタップで一時停止</string>
+    <string name="play_offscreen">画面外での再生</string>
+    <string name="summery_play_offscreen">画面が表示されていないときや画面がオフのときに再生</string>
+    <string name="crop_video">動画をトリミング</string>
+    <!-- scale type -->
+    <string name="fit_to_screen">画面に合わせる</string>
+    <string name="center">中央揃え</string>
+    <string name="original">元のまま</string>
 </resources>

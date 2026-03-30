@@ -21,3 +21,13 @@
 #-renamesourcefileattribute SourceFile
 
 -keepattributes SourceFile,LineNumberTable
+
+# Firebase Installations KTX Registrar
+-keep class com.google.firebase.installations.FirebaseInstallationsKtxRegistrar {
+    public <init>();
+}
+
+# General rule for Firebase Component Registrars to prevent similar issues
+-keep class * implements com.google.firebase.components.ComponentRegistrar {
+    public <init>();
+}

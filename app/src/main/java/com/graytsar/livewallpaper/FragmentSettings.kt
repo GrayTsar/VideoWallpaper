@@ -5,39 +5,160 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.preference.CheckBoxPreference
-import androidx.preference.PreferenceFragmentCompat
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import com.google.android.material.textfield.TextInputLayout
+import com.graytsar.livewallpaper.databinding.FragmentSettingsBinding
+import com.graytsar.livewallpaper.util.ImageScaling
+import com.graytsar.livewallpaper.util.VideoScaling
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
-class FragmentSettings: PreferenceFragmentCompat() {
-    private lateinit var preferenceDarkMode:CheckBoxPreference
+@AndroidEntryPoint
+class FragmentSettings : Fragment() {
+    val viewModel: ViewModelSettings by viewModels()
+
+    lateinit var switchDarkMode: SwitchMaterial
+    lateinit var layoutImageScaling: TextInputLayout
+    lateinit var autoCompleteImageScaling: MaterialAutoCompleteTextView
+    lateinit var switchVideoAudio: SwitchMaterial
+    lateinit var layoutVideoScaling: TextInputLayout
+    lateinit var autoCompleteVideoScaling: MaterialAutoCompleteTextView
+    lateinit var switchDoubleTapToPause: SwitchMaterial
+    lateinit var switchPlayOffscreen: SwitchMaterial
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        preferenceDarkMode =
-            preferenceManager.findPreference<CheckBoxPreference>(getString(R.string.keyThemeDarkMode))!!
+        return FragmentSettingsBinding.inflate(inflater, container, false).apply {
+            this@FragmentSettings.switchDarkMode = this.switchDarkMode
+            this@FragmentSettings.layoutImageScaling = this.inputLayoutImageScaling
+            this@FragmentSettings.autoCompleteImageScaling = this.autoCompleteImageScaling
+            this@FragmentSettings.switchVideoAudio = this.switchVideoAudio
+            this@FragmentSettings.layoutVideoScaling = this.inputLayoutVideoScaling
+            this@FragmentSettings.autoCompleteVideoScaling = this.autoCompleteVideoScaling
+            this@FragmentSettings.switchDoubleTapToPause = this.switchDoubleTapToPause
+            this@FragmentSettings.switchPlayOffscreen = this.switchPlayOffscreen
+        }.root
+    }
 
-        preferenceDarkMode.setOnPreferenceChangeListener { preference, newValue ->
-            if (newValue is Boolean) {
-                if (newValue) {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                } else {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val imageScalingTypes = ImageScaling.getTranslations().map {
+            requireContext().getString(it)
+        }
+        val videoScalingTypes = VideoScaling.getTranslations().map {
+            requireContext().getString(it)
+        }
+
+        autoCompleteImageScaling.setSimpleItems(imageScalingTypes.toTypedArray())
+        autoCompleteVideoScaling.setSimpleItems(videoScalingTypes.toTypedArray())
+
+        runBlocking {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val settings = withContext(Dispatchers.IO) {
+                    SettingsUiState(
+                        darkMode = viewModel.userPreferencesRepository.getForceDarkMode(),
+                        imageScaling = viewModel.userPreferencesRepository.getImageScaleType(),
+                        videoAudio = viewModel.userPreferencesRepository.getVideoAudio(),
+                        videoScaling = viewModel.userPreferencesRepository.getVideoScaling(),
+                        doubleTapToPause = viewModel.userPreferencesRepository.getDoubleTapToPause(),
+                        playOffscreen = viewModel.userPreferencesRepository.getPlayOffscreen()
+                    )
                 }
 
-                (context as? ReibuActivity)?.recreate()
+                switchDarkMode.isChecked = settings.darkMode
+                autoCompleteImageScaling.setText(
+                    requireContext().getString(settings.imageScaling.toTranslation()),
+                    false
+                )
+                switchVideoAudio.isChecked = settings.videoAudio
+                switchDoubleTapToPause.isChecked = settings.doubleTapToPause
+                switchPlayOffscreen.isChecked = settings.playOffscreen
+                autoCompleteVideoScaling.setText(
+                    requireContext().getString(settings.videoScaling.toTranslation()),
+                    false
+                )
             }
+        }
 
-            true
+        switchDarkMode.apply {
+            setOnCheckedChangeListener { _, isChecked ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    withContext(Dispatchers.IO) {
+                        viewModel.userPreferencesRepository.setForceDarkMode(isChecked)
+                    }
+
+                    AppCompatDelegate.setDefaultNightMode(
+                        if (isChecked) {
+                            AppCompatDelegate.MODE_NIGHT_YES
+                        } else {
+                            AppCompatDelegate.MODE_NIGHT_NO
+                        }
+                    )
+
+                    (activity as? ReibuActivity)?.recreate()
+                }
+            }
+        }
+
+        autoCompleteImageScaling.apply {
+            setOnItemClickListener { _, _, position, _ ->
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setImageScaleType(ImageScaling.from(position))
+                }
+            }
+        }
+
+        switchVideoAudio.apply {
+            setOnCheckedChangeListener { _, isChecked ->
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setVideoAudio(isChecked)
+                }
+            }
         }
 
 
-        return super.onCreateView(inflater, container, savedInstanceState)
+        autoCompleteVideoScaling.apply {
+            setOnItemClickListener { _, _, position, _ ->
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setVideoScaling(VideoScaling.from(position))
+                }
+            }
+        }
+
+        switchDoubleTapToPause.apply {
+            setOnCheckedChangeListener { _, isChecked ->
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setDoubleTapToPause(isChecked)
+                }
+            }
+        }
+
+        switchPlayOffscreen.apply {
+            setOnCheckedChangeListener { _, isChecked ->
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    viewModel.userPreferencesRepository.setPlayOffscreen(isChecked)
+                }
+            }
+        }
     }
 
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(R.xml.root_preferences, rootKey)
-    }
+    private data class SettingsUiState(
+        val darkMode: Boolean = false,
+        val imageScaling: ImageScaling = ImageScaling.FIT_TO_SCREEN,
+        val videoAudio: Boolean = false,
+        val videoScaling: VideoScaling = VideoScaling.FIT_CROP,
+        val doubleTapToPause: Boolean = false,
+        val playOffscreen: Boolean = false
+    )
 }

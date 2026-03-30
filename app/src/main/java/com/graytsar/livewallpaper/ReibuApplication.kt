@@ -3,11 +3,11 @@ package com.graytsar.livewallpaper
 import android.app.Application
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatDelegate
-import com.graytsar.livewallpaper.datastore.UserPreferences
+import com.google.firebase.FirebaseApp
+import com.graytsar.livewallpaper.repository.UserPreferencesRepository
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -15,18 +15,20 @@ import javax.inject.Inject
 @HiltAndroidApp
 class ReibuApplication : Application() {
     @Inject
-    lateinit var userPreferences: UserPreferences
+    lateinit var userPreferencesRepository: UserPreferencesRepository
 
     override fun onCreate() {
         super.onCreate()
 
-        when (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) {
-            Configuration.UI_MODE_NIGHT_YES -> {
+        FirebaseApp.initializeApp(this)
+
+        when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
+            Configuration.UI_MODE_NIGHT_YES -> { /* Nothing*/
             }
 
             Configuration.UI_MODE_NIGHT_NO -> {
-                GlobalScope.launch(Dispatchers.IO) {
-                    val isDarkMode = userPreferences.readForceDarkMode().first()
+                MainScope().launch(Dispatchers.IO) {
+                    val isDarkMode = userPreferencesRepository.getForceDarkMode()
                     if (isDarkMode) {
                         withContext(Dispatchers.Main) {
                             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
@@ -35,7 +37,7 @@ class ReibuApplication : Application() {
                 }
             }
 
-            Configuration.UI_MODE_NIGHT_UNDEFINED -> {
+            Configuration.UI_MODE_NIGHT_UNDEFINED -> { /* Nothing*/
             }
         }
     }

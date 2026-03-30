@@ -12,8 +12,8 @@
         tools:layout="@layout/fragment_picker" />
 
     <fragment
-        android:id="@+id/fragmentContainerSettings"
-        android:name="com.graytsar.livewallpaper.FragmentContainerSettings"
-        android:label="@string/all_settings"
-        tools:layout="@layout/fragment_container_settings" />
+        android:id="@+id/fragmentSettings"
+        android:name="com.graytsar.livewallpaper.FragmentSettings"
+        android:label="@string/settings"
+        tools:layout="@layout/fragment_settings" />
 </navigation>
