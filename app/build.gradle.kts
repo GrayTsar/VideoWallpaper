@@ -4,8 +4,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.google.hilt)
-    alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -17,8 +17,8 @@ android {
         applicationId = "com.graytsar.livewallpaper"
         minSdk = 23
         targetSdk = 36
-        versionCode = 19
-        versionName = "1.1.7"
+        versionCode = 20
+        versionName = "1.1.8"
 
         multiDexEnabled = true
 
@@ -89,8 +89,9 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
 
     //firebase
-    implementation(libs.firebase.analytics.ktx)
-    implementation(libs.firebase.crashlytics.ktx)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
 
     //hilt
     implementation(libs.androidx.hilt.common)

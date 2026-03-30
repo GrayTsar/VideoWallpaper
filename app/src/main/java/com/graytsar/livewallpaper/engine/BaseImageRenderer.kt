@@ -2,6 +2,7 @@ package com.graytsar.livewallpaper.engine
 
 import android.graphics.Canvas
 import android.graphics.Color
+import android.util.Log
 import android.view.SurfaceHolder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.graytsar.livewallpaper.util.ImageScaling
@@ -96,6 +97,7 @@ abstract class BaseImageRenderer(
                     delay(16)
                 }
             } catch (e: Exception) {
+                Log.e("ERROR", e.message.toString(), e)
                 FirebaseCrashlytics.getInstance().recordException(e)
             }
         }
