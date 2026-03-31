@@ -22,7 +22,7 @@ import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class FragmentSettings : Fragment() {
-    val viewModel: ViewModelSettings by viewModels()
+    val viewModel: ViewModelSettings by viewModels<ViewModelSettings>()
 
     lateinit var switchDarkMode: SwitchMaterial
     lateinit var layoutImageScaling: TextInputLayout
@@ -53,15 +53,10 @@ class FragmentSettings : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val imageScalingTypes = ImageScaling.getTranslations().map {
-            requireContext().getString(it)
-        }
-        val videoScalingTypes = VideoScaling.getTranslations().map {
-            requireContext().getString(it)
-        }
-
-        autoCompleteImageScaling.setSimpleItems(imageScalingTypes.toTypedArray())
-        autoCompleteVideoScaling.setSimpleItems(videoScalingTypes.toTypedArray())
+        autoCompleteImageScaling.setSimpleItems(viewModel.imageScalingTypes.map { requireContext().getString(it) }
+            .toTypedArray())
+        autoCompleteVideoScaling.setSimpleItems(viewModel.videoScalingTypes.map { requireContext().getString(it) }
+            .toTypedArray())
 
         runBlocking {
             viewLifecycleOwner.lifecycleScope.launch {
@@ -93,20 +88,19 @@ class FragmentSettings : Fragment() {
 
         switchDarkMode.apply {
             setOnCheckedChangeListener { _, isChecked ->
-                viewLifecycleOwner.lifecycleScope.launch {
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
                     withContext(Dispatchers.IO) {
                         viewModel.userPreferencesRepository.setForceDarkMode(isChecked)
                     }
-
-                    AppCompatDelegate.setDefaultNightMode(
-                        if (isChecked) {
-                            AppCompatDelegate.MODE_NIGHT_YES
-                        } else {
-                            AppCompatDelegate.MODE_NIGHT_NO
-                        }
-                    )
-
-                    (activity as? ReibuActivity)?.recreate()
+                    withContext(Dispatchers.Main) {
+                        AppCompatDelegate.setDefaultNightMode(
+                            if (isChecked) {
+                                AppCompatDelegate.MODE_NIGHT_YES
+                            } else {
+                                AppCompatDelegate.MODE_NIGHT_NO
+                            }
+                        )
+                    }
                 }
             }
         }

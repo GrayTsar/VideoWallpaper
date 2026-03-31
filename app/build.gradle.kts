@@ -17,7 +17,7 @@ android {
         applicationId = "com.graytsar.livewallpaper"
         minSdk = 23
         targetSdk = 36
-        versionCode = 20
+        versionCode = 21
         versionName = "1.1.8"
 
         multiDexEnabled = true
@@ -60,7 +60,7 @@ kotlin {
 }
 
 base {
-    archivesName = "reibu"
+    archivesName = "rei"
 }
 
 dependencies {
