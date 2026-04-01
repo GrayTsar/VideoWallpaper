@@ -29,7 +29,22 @@
             android:value="@string/gms_app_id" />
 
         <service
-            android:name=".VideoWallpaperService"
+            android:name=".service.ImageWallpaperService"
+            android:enabled="true"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_WALLPAPER">
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.service.wallpaper"
+                android:resource="@xml/image_wallpaper_thumbnail" />
+        </service>
+
+        <service
+            android:name=".service.VideoWallpaperService"
             android:enabled="true"
             android:exported="true"
             android:label="@string/app_name"
@@ -42,11 +57,11 @@
             <!-- Has background image and label as app name, android 10 label = name -->
             <meta-data
                 android:name="android.service.wallpaper"
-                android:resource="@xml/launcher_thumbnail" />
+                android:resource="@xml/video_wallpaper_thumbnail" />
         </service>
 
         <activity
-            android:name=".ReibuActivity"
+            android:name=".ui.ReibuActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

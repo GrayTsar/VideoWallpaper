@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- scale type -->
+    <string name="fit_crop">Fit crop</string>
+    <string name="fit_to_screen">Fit to screen</string>
+    <string name="center">Center</string>
+    <string name="original">Original</string>
+</resources>

@@ -19,8 +19,4 @@
     <string name="play_offscreen">Off-Screen abspielen</string>
     <string name="summery_play_offscreen">Spielen wenn nicht sichtabar oder Bildschirm ist aus</string>
     <string name="crop_video">Video zuschneiden</string>
-    <!-- scale type -->
-    <string name="fit_to_screen">An Bildschirm anpassen</string>
-    <string name="center">Zentrieren</string>
-    <string name="original">Original</string>
 </resources>

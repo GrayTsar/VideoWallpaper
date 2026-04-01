@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- scale type -->
+    <string name="fit_to_screen">화면 맞춤</string>
+    <string name="center">중앙 정렬</string>
+    <string name="original">원본</string>
+</resources>

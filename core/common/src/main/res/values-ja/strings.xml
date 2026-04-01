@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- scale type -->
+    <string name="fit_to_screen">画面に合わせる</string>
+    <string name="center">中央揃え</string>
+    <string name="original">元のまま</string>
+</resources>

@@ -19,8 +19,4 @@
     <string name="play_offscreen">Воспроизведение вне экрана</string>
     <string name="summery_play_offscreen">Воспроизведение, когда видео не видно или экран выключен</string>
     <string name="crop_video">Обрезать видео</string>
-    <!-- scale type -->
-    <string name="fit_to_screen">Подгонка под экран</string>
-    <string name="center">По центру</string>
-    <string name="original">Оригинал</string>
 </resources>

@@ -19,8 +19,4 @@
     <string name="play_offscreen">Lecture hors écran</string>
     <string name="summery_play_offscreen">Lecture lorsque la vidéo n\'est pas visible ou que l\'écran est éteint</string>
     <string name="crop_video">Recadrer la vidéo</string>
-    <!-- scale type -->
-    <string name="fit_to_screen">Ajuster à l\'écran</string>
-    <string name="center">Centrer</string>
-    <string name="original">Original</string>
 </resources>

@@ -11,7 +11,9 @@ plugins {
 
 android {
     namespace = "com.graytsar.livewallpaper"
-    compileSdk = 36
+    compileSdk {
+        version = release(36)
+    }
 
     defaultConfig {
         applicationId = "com.graytsar.livewallpaper"
@@ -77,7 +79,6 @@ dependencies {
     implementation(libs.androidx.datastore)
     implementation(libs.kotlinx.serialization.protobuf)
 
-
     //lifecycle
     implementation(libs.androidx.lifecycle.extensions)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -111,4 +112,8 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
+
+    implementation(project(":core:common"))
+    implementation(project(":core:datastore"))
+    implementation(project(":core:repository"))
 }

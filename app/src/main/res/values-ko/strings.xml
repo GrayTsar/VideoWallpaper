@@ -19,8 +19,4 @@
     <string name="play_offscreen">화면 밖에서 재생</string>
     <string name="summery_play_offscreen">화면이 보이지 않거나 꺼져 있을 때 재생</string>
     <string name="crop_video">동영상 자르기</string>
-    <!-- scale type -->
-    <string name="fit_to_screen">화면 맞춤</string>
-    <string name="center">중앙 정렬</string>
-    <string name="original">원본</string>
 </resources>

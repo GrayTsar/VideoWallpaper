@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- scale type -->
+    <string name="fit_to_screen">适应屏幕</string>
+    <string name="center">居中</string>
+    <string name="original">原始</string>
+</resources>

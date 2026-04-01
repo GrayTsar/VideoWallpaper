@@ -1,14 +1,9 @@
 package com.graytsar.livewallpaper.util
 
 import android.content.Context
-import android.view.View
-import android.view.ViewGroup
-import androidx.annotation.StringRes
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updateLayoutParams
-import com.graytsar.livewallpaper.R
-import com.graytsar.livewallpaper.repository.UserPreferencesRepository
+import com.graytsar.livewallpaper.core.common.model.WallpaperServiceType
+import com.graytsar.livewallpaper.core.common.model.WallpaperType
+import com.graytsar.livewallpaper.core.repository.UserPreferencesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
@@ -21,81 +16,12 @@ import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 import kotlin.io.path.walk
 
-enum class WallpaperFlag {
-    SYSTEM,
-    LOCK;
-}
-
-enum class WallpaperType {
-    NONE,
-    IMAGE,
-    VIDEO;
-}
-
-enum class ImageScaling(val value: Int) {
-    FIT_TO_SCREEN(0),
-    CENTER(1),
-    ORIGINAL(2);
-
-    @StringRes
-    fun toTranslation(): Int {
-        return when (this) {
-            FIT_TO_SCREEN -> R.string.fit_to_screen
-            CENTER -> R.string.center
-            ORIGINAL -> R.string.original
-        }
-    }
-
-    companion object {
-        fun getTranslations() = listOf(
-            FIT_TO_SCREEN.toTranslation(),
-            CENTER.toTranslation(),
-            ORIGINAL.toTranslation()
-        )
-
-        fun from(index: Int) =
-            entries.getOrNull(index) ?: throw IllegalArgumentException("Invalid image scale type index $index")
-    }
-}
-
-enum class VideoScaling(val value: Int) {
-    FIT_CROP(0),
-    FIT_TO_SCREEN(1),
-    ORIGINAL(2);
-
-    @StringRes
-    fun toTranslation(): Int {
-        return when (this) {
-            FIT_CROP -> R.string.fit_crop
-            FIT_TO_SCREEN -> R.string.fit_to_screen
-            ORIGINAL -> R.string.original
-        }
-    }
-
-    companion object {
-        fun getTranslations() = listOf(
-            FIT_CROP.toTranslation(),
-            FIT_TO_SCREEN.toTranslation(),
-            ORIGINAL.toTranslation()
-        )
-
-        fun from(index: Int) =
-            entries.getOrNull(index) ?: throw IllegalArgumentException("Invalid video scale type index $index")
-    }
+fun WallpaperType.toServiceType() = when (this) {
+    WallpaperType.IMAGE -> WallpaperServiceType.IMAGE
+    WallpaperType.NONE, WallpaperType.VIDEO -> WallpaperServiceType.VIDEO
 }
 
 object Util {
-    fun applyWindowInsetsForTopAppBar(view: View) {
-        ViewCompat.setOnApplyWindowInsetsListener(view) { v, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-
-            v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                topMargin = insets.top
-            }
-
-            WindowInsetsCompat.CONSUMED
-        }
-    }
 
     fun getImageImportDirectory(context: Context): Path {
         val importPathString = "${context.filesDir.path}/import/image"

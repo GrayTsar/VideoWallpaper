@@ -19,8 +19,4 @@
     <string name="play_offscreen">Reproducir fuera de pantalla</string>
     <string name="summery_play_offscreen">Reproducir cuando no se ve o la pantalla está apagada</string>
     <string name="crop_video">Recortar vídeo</string>
-    <!-- scale type -->
-    <string name="fit_to_screen">Ajustar a la pantalla</string>
-    <string name="center">Centrar</string>
-    <string name="original">Original</string>
 </resources>

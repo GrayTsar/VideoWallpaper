@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.SurfaceHolder
 import androidx.annotation.RequiresApi
+import com.graytsar.livewallpaper.core.common.model.ImageEngineSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -15,7 +16,7 @@ import java.io.File
 class Api28ImageRenderer(
     holder: SurfaceHolder,
     file: File,
-    settings: EngineSettings
+    settings: ImageEngineSettings
 ) : BaseImageRenderer(holder, file, settings) {
     private var animatedImageDrawable: Drawable? = null
 

@@ -7,13 +7,13 @@
 
     <fragment
         android:id="@+id/fragmentMain"
-        android:name="com.graytsar.livewallpaper.FragmentPicker"
+        android:name="com.graytsar.livewallpaper.ui.FragmentPicker"
         android:label="@string/app_name"
         tools:layout="@layout/fragment_picker" />
 
     <fragment
         android:id="@+id/fragmentSettings"
-        android:name="com.graytsar.livewallpaper.FragmentSettings"
+        android:name="com.graytsar.livewallpaper.ui.FragmentSettings"
         android:label="@string/settings"
         tools:layout="@layout/fragment_settings" />
 </navigation>

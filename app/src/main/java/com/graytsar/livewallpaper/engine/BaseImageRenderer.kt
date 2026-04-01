@@ -5,7 +5,8 @@ import android.graphics.Color
 import android.util.Log
 import android.view.SurfaceHolder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.graytsar.livewallpaper.util.ImageScaling
+import com.graytsar.livewallpaper.core.common.model.ImageEngineSettings
+import com.graytsar.livewallpaper.core.common.model.ImageScaling
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,7 +21,7 @@ import java.io.File
 abstract class BaseImageRenderer(
     private val holder: SurfaceHolder,
     private val file: File,
-    private val settings: EngineSettings
+    private val settings: ImageEngineSettings
 ) : WallpaperRenderer {
     private var drawJob: Job? = null
     private var shouldDraw: Boolean = true

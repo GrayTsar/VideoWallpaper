@@ -3,13 +3,14 @@ package com.graytsar.livewallpaper.engine
 import android.graphics.Canvas
 import android.graphics.Movie
 import android.view.SurfaceHolder
+import com.graytsar.livewallpaper.core.common.model.ImageEngineSettings
 import java.io.File
 
 @Suppress("DEPRECATION")
 class LegacyImageRenderer(
     holder: SurfaceHolder,
     file: File,
-    settings: EngineSettings
+    settings: ImageEngineSettings
 ) : BaseImageRenderer(holder, file, settings) {
     private var movie: Movie? = null
 

@@ -3,8 +3,9 @@ package com.graytsar.livewallpaper
 import android.app.Application
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatDelegate
+import com.google.android.gms.ads.MobileAds
 import com.google.firebase.FirebaseApp
-import com.graytsar.livewallpaper.repository.UserPreferencesRepository
+import com.graytsar.livewallpaper.core.repository.UserPreferencesRepository
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -19,8 +20,6 @@ class ReibuApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
-        FirebaseApp.initializeApp(this)
 
         when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
             Configuration.UI_MODE_NIGHT_YES -> { /* Nothing*/
@@ -40,5 +39,8 @@ class ReibuApplication : Application() {
             Configuration.UI_MODE_NIGHT_UNDEFINED -> { /* Nothing*/
             }
         }
+
+        FirebaseApp.initializeApp(this)
+        runCatching { MobileAds.initialize(this) }
     }
 }

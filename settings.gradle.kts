@@ -19,3 +19,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "Live Wallpaper"
 include(":app")
+include(":core:common")
+include(":core:datastore")
+include(":core:repository")

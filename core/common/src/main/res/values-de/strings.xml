@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- scale type -->
+    <string name="fit_to_screen">An Bildschirm anpassen</string>
+    <string name="center">Zentrieren</string>
+    <string name="original">Original</string>
+</resources>

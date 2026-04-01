@@ -19,8 +19,4 @@
     <string name="play_offscreen">屏幕外播放</string>
     <string name="summery_play_offscreen">屏幕不可见或关闭时继续播放</string>
     <string name="crop_video">裁剪视频</string>
-    <!-- scale type -->
-    <string name="fit_to_screen">适应屏幕</string>
-    <string name="center">居中</string>
-    <string name="original">原始</string>
 </resources>

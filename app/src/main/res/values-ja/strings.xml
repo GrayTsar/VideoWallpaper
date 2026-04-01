@@ -19,8 +19,4 @@
     <string name="play_offscreen">画面外での再生</string>
     <string name="summery_play_offscreen">画面が表示されていないときや画面がオフのときに再生</string>
     <string name="crop_video">動画をトリミング</string>
-    <!-- scale type -->
-    <string name="fit_to_screen">画面に合わせる</string>
-    <string name="center">中央揃え</string>
-    <string name="original">元のまま</string>
 </resources>
