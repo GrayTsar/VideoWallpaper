@@ -7,6 +7,7 @@ import android.view.SurfaceHolder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.graytsar.livewallpaper.core.common.model.ImageEngineSettings
 import com.graytsar.livewallpaper.core.common.model.ImageScaling
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -97,6 +98,8 @@ abstract class BaseImageRenderer(
                     }
                     delay(16)
                 }
+            } catch (e: CancellationException) {
+                //expected when stopping the drawing loop, no need to log
             } catch (e: Exception) {
                 Log.e("ERROR", e.message.toString(), e)
                 FirebaseCrashlytics.getInstance().recordException(e)

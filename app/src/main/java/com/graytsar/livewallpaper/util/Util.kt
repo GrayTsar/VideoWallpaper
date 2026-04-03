@@ -6,15 +6,8 @@ import com.graytsar.livewallpaper.core.common.model.WallpaperType
 import com.graytsar.livewallpaper.core.repository.UserPreferencesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.InputStream
-import java.nio.file.Path
-import kotlin.io.path.Path
-import kotlin.io.path.createDirectories
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.isDirectory
-import kotlin.io.path.outputStream
-import kotlin.io.path.pathString
-import kotlin.io.path.walk
 
 fun WallpaperType.toServiceType() = when (this) {
     WallpaperType.IMAGE -> WallpaperServiceType.IMAGE
@@ -23,29 +16,31 @@ fun WallpaperType.toServiceType() = when (this) {
 
 object Util {
 
-    fun getImageImportDirectory(context: Context): Path {
+    fun getImageImportDirectory(context: Context): File {
         val importPathString = "${context.filesDir.path}/import/image"
-        val path = Path(importPathString)
-        if (!path.isDirectory()) {
-            path.createDirectories()
+        val file = File(importPathString)
+        if (!file.isDirectory) {
+            file.mkdirs()
         }
-        return path
+        return file
     }
 
-    fun getVideoImportDirectory(context: Context): Path {
+    fun getVideoImportDirectory(context: Context): File {
         val importPathString = "${context.filesDir.path}/import/video"
-        val path = Path(importPathString)
-        if (!path.isDirectory()) {
-            path.createDirectories()
+        val file = File(importPathString)
+        if (!file.isDirectory) {
+            file.mkdirs()
         }
-        return path
+        return file
     }
 
-    fun importImage(inputStream: InputStream, context: Context): Path {
+    fun importImage(inputStream: InputStream, context: Context): File {
         // Create a unique file for preview
         val time = System.currentTimeMillis()
-        return Path("${getImageImportDirectory(context).pathString}/image_$time").also { it ->
-            it.deleteIfExists()
+        return File(getImageImportDirectory(context), "image_$time").also { it ->
+            if (it.exists()) {
+                it.delete()
+            }
         }.apply {
             outputStream().use { outputStream ->
                 inputStream.use {
@@ -55,11 +50,13 @@ object Util {
         }
     }
 
-    fun importVideo(inputStream: InputStream, context: Context): Path {
+    fun importVideo(inputStream: InputStream, context: Context): File {
         // Create a unique file for preview
         val time = System.currentTimeMillis()
-        return Path("${getVideoImportDirectory(context).pathString}/video_$time").also { it ->
-            it.deleteIfExists()
+        return File(getVideoImportDirectory(context), "video_$time").also { it ->
+            if (it.exists()) {
+                it.delete()
+            }
         }.apply {
             outputStream().use { outputStream ->
                 inputStream.use {
@@ -72,20 +69,20 @@ object Util {
     suspend fun cleanup(
         context: Context,
         userPreferencesRepository: UserPreferencesRepository,
-        path: Path
+        path: File
     ) = withContext(Dispatchers.IO) {
         val activePath = userPreferencesRepository.getWallpaperPath()
-        val newPreviewPath = path.pathString
+        val newPreviewPath = path.path
 
         // Clean up old files
         listOf(
             getImageImportDirectory(context),
             getVideoImportDirectory(context)
         ).forEach { dir ->
-            dir.walk().filter { !it.isDirectory() }.forEach { file ->
-                val filePath = file.pathString
+            dir.walk().filter { !it.isDirectory }.forEach { file ->
+                val filePath = file.path
                 if (filePath != activePath && filePath != newPreviewPath) {
-                    file.deleteIfExists()
+                    file.delete()
                 }
             }
         }

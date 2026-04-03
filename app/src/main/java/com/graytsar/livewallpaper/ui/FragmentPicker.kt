@@ -35,8 +35,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.io.File
-import java.nio.file.Path
-import kotlin.io.path.pathString
+
 
 @AndroidEntryPoint
 class FragmentPicker : Fragment() {
@@ -107,12 +106,12 @@ class FragmentPicker : Fragment() {
         requireActivity().addMenuProvider(menuProvider, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
-    private fun saveSelection(path: Path, type: WallpaperType) {
+    private fun saveSelection(path: File, type: WallpaperType) {
         runBlocking(Dispatchers.IO) {
             Util.cleanup(requireContext(), viewModel.userPreferencesRepository, path)
             viewModel.userPreferencesRepository.setPreviewWallpaperType(type)
             viewModel.userPreferencesRepository.setPreviewWallpaperService(type.toServiceType())
-            viewModel.userPreferencesRepository.setPreviewPath(path.pathString)
+            viewModel.userPreferencesRepository.setPreviewPath(path.path)
         }
     }
 
@@ -123,7 +122,7 @@ class FragmentPicker : Fragment() {
         Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
     }
 
-    private fun saveImage(uri: Uri): Path? {
+    private fun saveImage(uri: Uri): File? {
         try {
             val stream = viewModel.openInputStreamForContentResolver(uri)
             return Util.importImage(stream, requireContext())
@@ -133,7 +132,7 @@ class FragmentPicker : Fragment() {
         }
     }
 
-    private fun saveVideo(uri: Uri): Path? {
+    private fun saveVideo(uri: Uri): File? {
         try {
             val inputStream = viewModel.openInputStreamForContentResolver(uri)
             return Util.importVideo(inputStream, requireContext())
@@ -174,7 +173,11 @@ class FragmentPicker : Fragment() {
         //videoLauncher.launch(Intent.createChooser(intent, "Video"))
 
         //val intent = videoLauncher.contract.createIntent(requireContext())
-        videoLauncher.launch("video/*")
+        try {
+            videoLauncher.launch("video/*")
+        } catch (e: ActivityNotFoundException) {
+            Snackbar.make(requireView(), "No video picker app found on this device.", Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     /**
@@ -187,7 +190,11 @@ class FragmentPicker : Fragment() {
         //    type = "image/*"
         //}
         //imageLauncher.launch(Intent.createChooser(intent, "Image"))
-        imageLauncher.launch("image/*")
+        try {
+            imageLauncher.launch("image/*")
+        } catch (e: ActivityNotFoundException) {
+            Snackbar.make(requireView(), "No image picker app found on this device.", Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     private val menuProvider = object : MenuProvider {

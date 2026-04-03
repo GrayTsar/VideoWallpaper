@@ -1,16 +1,16 @@
 package com.graytsar.livewallpaper.ui
 
-import android.app.WallpaperManager
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.graphics.Movie
-import android.media.MediaPlayer
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.graytsar.livewallpaper.core.repository.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.InputStream
@@ -19,22 +19,27 @@ import javax.inject.Inject
 @HiltViewModel
 class ViewModelPicker @Inject constructor(
     val contentResolver: ContentResolver,
-    val userPreferencesRepository: UserPreferencesRepository,
-    val wallpaperManager: WallpaperManager
+    val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     /**
      *
-     * @throws IllegalStateException if [MediaPlayer] creation failed
+     * @throws IllegalArgumentException – if the Uri is invalid
+     * @throws SecurityException – if the Uri cannot be used due to lack of permission
      */
     fun validateVideo(uri: Uri, context: Context): Boolean {
-        //MediaMetadataRetriever
-        val mediaPlayer: MediaPlayer? = MediaPlayer.create(context, uri).apply {
-            setVolume(0f, 0f)
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(context, uri)
+            // Check if the file actually contains a video track
+            val hasVideo = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO)
+            return hasVideo != null
+        } catch (e: Exception) {
+            FirebaseCrashlytics.getInstance().recordException(e)
+            return false
+        } finally {
+            runCatching { retriever.release() }
         }
-        checkNotNull(mediaPlayer) { "Unable to create MediaPlayer for the provided URI" }
-        mediaPlayer.release()
-        return true
     }
 
     fun validateImage(uri: Uri): Boolean {
