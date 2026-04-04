@@ -2,8 +2,10 @@ package com.graytsar.livewallpaper.engine
 
 import android.graphics.Canvas
 import android.graphics.Movie
+import android.util.Log
 import android.view.SurfaceHolder
 import androidx.core.graphics.withSave
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.graytsar.livewallpaper.core.common.model.ImageEngineSettings
 import java.io.File
 import kotlin.math.max
@@ -17,8 +19,13 @@ class LegacyImageRenderer(
     private var movie: Movie? = null
 
     override fun loadContent(file: File) {
-        file.inputStream().use { inputStream ->
-            movie = Movie.decodeStream(inputStream)
+        runCatching {
+            file.inputStream().use { inputStream ->
+                movie = Movie.decodeStream(inputStream)
+            }
+        }.onFailure { exception ->
+            FirebaseCrashlytics.getInstance().recordException(exception)
+            Log.e("LegacyImageRenderer", "Failed to load image content", exception)
         }
     }
 
@@ -75,10 +82,10 @@ class LegacyImageRenderer(
     }
 
     override fun drawOriginal(canvas: Canvas) {
-        movie?.let { movie ->
-            movie.setTime((System.currentTimeMillis() % movie.safeDuration()).toInt())
+        movie?.apply {
+            setTime((System.currentTimeMillis() % safeDuration()).toInt())
 
-            movie.draw(canvas, 0f, 0f)
+            draw(canvas, 0f, 0f)
         }
     }
 
@@ -86,12 +93,12 @@ class LegacyImageRenderer(
         movie = null
     }
 
-    private fun Movie.safeDuration(): Long {
+    private fun Movie.safeDuration(): Int {
         val duration = duration()
         return if (duration > 0) {
-            duration.toLong()
+            duration
         } else {
-            1000L
+            1000
         }
     }
 }

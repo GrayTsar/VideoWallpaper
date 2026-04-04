@@ -2,6 +2,7 @@ package com.graytsar.livewallpaper.service
 
 import android.os.Build
 import android.service.wallpaper.WallpaperService
+import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import com.graytsar.livewallpaper.core.common.model.ImageEngineSettings
@@ -50,9 +51,20 @@ class ImageWallpaperService : WallpaperService() {
         private var observeJob: Job? = null
         private var renderer: WallpaperRenderer? = null
         private var engineSettings: ImageEngineSettings? = null
-
-        private var tapTimeBetween: Long = 0L
         private var isPaused: Boolean = false
+
+        private val gestureDetector = GestureDetector(
+            this@ImageWallpaperService,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    if (engineSettings?.general?.doubleTapToPause == true) {
+                        isPaused = !isPaused
+                        renderer?.onPauseChanged(isPaused)
+                        return true
+                    }
+                    return false
+                }
+            })
 
         override fun onCreate(surfaceHolder: SurfaceHolder?) {
             super.onCreate(surfaceHolder)
@@ -74,9 +86,7 @@ class ImageWallpaperService : WallpaperService() {
                     engineSettings = settings
                     val shouldUpdate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                         selection?.flag == WallpaperFlag.from(wallpaperFlags)
-                    } else {
-                        true
-                    }
+                    } else true
                     if (shouldUpdate) {
                         handleUpdate(settings, selection)
                     }
@@ -90,16 +100,7 @@ class ImageWallpaperService : WallpaperService() {
         }
 
         override fun onTouchEvent(event: MotionEvent?) {
-            val doubleTapToPause = engineSettings?.general?.doubleTapToPause ?: false
-            if (doubleTapToPause && event?.actionMasked == MotionEvent.ACTION_DOWN) {
-                val currentTime = System.currentTimeMillis()
-                if (currentTime - tapTimeBetween <= 500L) {
-                    isPaused = !isPaused
-                    renderer?.onPauseChanged(isPaused)
-                }
-                tapTimeBetween = currentTime
-            }
-
+            if (event != null) gestureDetector.onTouchEvent(event)
             super.onTouchEvent(event)
         }
 

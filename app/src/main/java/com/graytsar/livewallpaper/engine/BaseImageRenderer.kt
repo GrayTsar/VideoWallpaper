@@ -26,9 +26,12 @@ abstract class BaseImageRenderer(
 ) : WallpaperRenderer {
     private val rendererScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var drawJob: Job? = null
-    private var shouldDraw: Boolean = true
 
+    @Volatile
+    private var shouldDraw: Boolean = true
+    @Volatile
     private var isVisible: Boolean = false
+    @Volatile
     private var isPaused: Boolean = false
 
     final override fun onSurfaceReady() {
@@ -146,8 +149,12 @@ abstract class BaseImageRenderer(
     }
 
     private fun drawFrame() {
-        //if (!holder.surface.isValid) return
-        val canvas = holder.lockCanvas() ?: return
+        val canvas = try {
+            holder.lockCanvas()
+        } catch (e: Exception) {
+            FirebaseCrashlytics.getInstance().recordException(e)
+            return
+        }
         //reset canvas state
         canvas.drawColor(Color.BLACK)
         try {

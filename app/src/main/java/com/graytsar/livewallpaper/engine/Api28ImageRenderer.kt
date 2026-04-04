@@ -7,10 +7,12 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.SurfaceHolder
 import androidx.annotation.RequiresApi
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.graytsar.livewallpaper.core.common.model.ImageEngineSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.io.IOException
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -24,11 +26,17 @@ class Api28ImageRenderer(
 
     override fun loadContent(file: File) {
         val source = ImageDecoder.createSource(file)
-        animatedImageDrawable = runBlocking(Dispatchers.IO) {
-            ImageDecoder.decodeDrawable(source)
+        try {
+            animatedImageDrawable = runBlocking(Dispatchers.IO) {
+                ImageDecoder.decodeDrawable(source) { decoder, info, _ ->
+                    decoder.allocator = ImageDecoder.ALLOCATOR_HARDWARE
+                }
+            }
+            startAnimationIfNeeded()
+        } catch (e: IOException) {
+            FirebaseCrashlytics.getInstance().recordException(e)
+            cleanupContent()
         }
-
-        startAnimationIfNeeded()
     }
 
     override fun onPlaybackStateChanged(isPlaying: Boolean) {
