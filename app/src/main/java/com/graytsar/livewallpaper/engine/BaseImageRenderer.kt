@@ -24,33 +24,26 @@ abstract class BaseImageRenderer(
     private val file: File,
     private val settings: ImageEngineSettings
 ) : WallpaperRenderer {
+    private val rendererScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var drawJob: Job? = null
     private var shouldDraw: Boolean = true
+
+    private var isVisible: Boolean = false
     private var isPaused: Boolean = false
-    private val rendererScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     final override fun onSurfaceReady() {
         loadContent(file)
         restartDrawing()
     }
 
-    final override fun onVisibilityChanged(isVisible: Boolean, isPaused: Boolean) {
-        this.isPaused = isPaused
-        onImageVisibilityChanged(isVisible)
-
-        if (isVisible) {
-            if (settings.general.playOffscreen) {
-                startDrawingIfNeeded()
-            } else {
-                restartDrawing()
-            }
-        } else if (!settings.general.playOffscreen) {
-            stopDrawing()
-        }
+    final override fun onVisibilityChanged(isVisible: Boolean) {
+        this.isVisible = isVisible
+        updateDrawState()
     }
 
-    final override fun onPauseStateChanged(isPaused: Boolean, isVisible: Boolean) {
+    final override fun onPauseChanged(isPaused: Boolean) {
         this.isPaused = isPaused
+        updateDrawState()
     }
 
     final override fun release() {
@@ -59,7 +52,7 @@ abstract class BaseImageRenderer(
         rendererScope.cancel()
     }
 
-    protected open fun onImageVisibilityChanged(visible: Boolean) = Unit
+    protected open fun onPlaybackStateChanged(isPlaying: Boolean) = Unit
 
     protected abstract fun loadContent(file: File)
 
@@ -71,21 +64,43 @@ abstract class BaseImageRenderer(
 
     protected open fun cleanupContent() = Unit
 
-    private fun startDrawingIfNeeded() {
+    private fun updateDrawState() {
+        //isPlaying = not paused AND (visible OR play offscreen)
+        val shouldPlay = when {
+            isPaused -> false
+            isVisible -> true
+            else -> settings.general.playOffscreen
+        }
+        onPlaybackStateChanged(shouldPlay)
+
+        when (shouldPlay) {
+            true -> startDrawing()
+            false -> stopDrawing()
+        }
+    }
+
+    private fun startDrawing() {
         shouldDraw = true
-        if (drawJob == null) {
+        /*
+         * if draw job is null should start drawing
+         * if draw job is not active should start drawing
+         * if draw job is completed should start drawing
+         */
+        if (drawJob == null || drawJob?.isActive == false || drawJob?.isCompleted == true) {
             drawJob = startDrawJob()
         }
     }
 
     private fun restartDrawing() {
         stopDrawing()
-        startDrawingIfNeeded()
+        startDrawing()
     }
 
     private fun stopDrawing() {
         shouldDraw = false
-        runBlocking { drawJob?.cancelAndJoin() }
+        drawJob?.let { job ->
+            runBlocking { job.cancelAndJoin() }
+        }
         drawJob = null
     }
 

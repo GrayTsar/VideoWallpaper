@@ -29,9 +29,9 @@ class Api28ImageRenderer(
         startAnimationIfNeeded()
     }
 
-    override fun onImageVisibilityChanged(visible: Boolean) {
+    override fun onPlaybackStateChanged(isPlaying: Boolean) {
         val animation = animatedImageDrawable as? AnimatedImageDrawable ?: return
-        if (visible) {
+        if (isPlaying) {
             animation.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
             animation.start()
         } else {

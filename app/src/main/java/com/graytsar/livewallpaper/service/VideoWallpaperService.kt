@@ -17,10 +17,12 @@ import com.graytsar.livewallpaper.engine.WallpaperRenderer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -36,15 +38,16 @@ class VideoWallpaperService : WallpaperService() {
     override fun onCreateEngine(): Engine = VideoWallpaperEngine()
 
     private inner class VideoWallpaperEngine : Engine() {
-        private var renderer: WallpaperRenderer? = null
-        private var tapTimeBetween: Long = 0L
-        private var isPaused: Boolean = false
-        private var isVisibleToUser: Boolean = false
-
-        private var engineSettings: VideoEngineSettings? = null
         private val engineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
         private var observeJob: Job? = null
+        private var renderer: WallpaperRenderer? = null
+        private var engineSettings: VideoEngineSettings? = null
 
+        private var tapTimeBetween: Long = 0L
+        private var isPaused: Boolean = false
+        private var isVisibleToUser: Boolean = true
+
+        @OptIn(FlowPreview::class)
         override fun onCreate(surfaceHolder: SurfaceHolder?) {
             super.onCreate(surfaceHolder)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -61,13 +64,14 @@ class VideoWallpaperService : WallpaperService() {
                     )
                 ) { settings, selection ->
                     settings to selection
-                }.collect { (settings, selection) ->
+                }.debounce(300L).collect { (settings, selection) ->
                     engineSettings = settings
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        if (selection?.flag == WallpaperFlag.from(wallpaperFlags)) {
-                            handleUpdate(settings, selection)
-                        }
+                    val shouldUpdate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        selection?.flag == WallpaperFlag.from(wallpaperFlags)
                     } else {
+                        true
+                    }
+                    if (shouldUpdate) {
                         handleUpdate(settings, selection)
                     }
                 }
@@ -77,7 +81,7 @@ class VideoWallpaperService : WallpaperService() {
         override fun onVisibilityChanged(visible: Boolean) {
             super.onVisibilityChanged(visible)
             isVisibleToUser = visible
-            renderer?.onVisibilityChanged(visible, isPaused)
+            renderer?.onVisibilityChanged(visible)
         }
 
         override fun onTouchEvent(event: MotionEvent?) {
@@ -86,7 +90,7 @@ class VideoWallpaperService : WallpaperService() {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - tapTimeBetween <= 500L) {
                     isPaused = !isPaused
-                    renderer?.onPauseStateChanged(isPaused, isVisibleToUser)
+                    renderer?.onPauseChanged(isPaused)
                 }
                 tapTimeBetween = currentTime
             }
@@ -127,7 +131,7 @@ class VideoWallpaperService : WallpaperService() {
                 file = file,
                 settings = settings
             ).also { renderer ->
-                renderer.onVisibilityChanged(isVisibleToUser, isPaused)
+                renderer.onVisibilityChanged(isVisibleToUser)
                 renderer.onSurfaceReady()
             }
         }
@@ -147,9 +151,10 @@ class VideoWallpaperService : WallpaperService() {
         private val settings: VideoEngineSettings
     ) : WallpaperRenderer {
         private var mediaPlayer: MediaPlayer? = null
+        private var isMediaPlayerPrepared: Boolean = false
+
         private var isVisible = false
         private var isPaused = false
-
 
         override fun onSurfaceReady() {
             try {
@@ -160,15 +165,18 @@ class VideoWallpaperService : WallpaperService() {
             }
         }
 
-        override fun onVisibilityChanged(isVisible: Boolean, isPaused: Boolean) {
-            updatePlaybackState(isVisible, isPaused)
+        override fun onVisibilityChanged(isVisible: Boolean) {
+            this.isVisible = isVisible
+            updatePlayState()
         }
 
-        override fun onPauseStateChanged(isPaused: Boolean, isVisible: Boolean) {
-            updatePlaybackState(isVisible, isPaused)
+        override fun onPauseChanged(isPaused: Boolean) {
+            this.isPaused = isPaused
+            updatePlayState()
         }
 
         override fun release() {
+            isMediaPlayerPrepared = false
             val player = mediaPlayer ?: return
 
             runCatching {
@@ -181,11 +189,6 @@ class VideoWallpaperService : WallpaperService() {
         }
 
         private fun createMediaPlayer() {
-            if (mediaPlayer != null) {
-                mediaPlayer!!.setSurface(holder.surface)
-                return
-            }
-
             val videoScalingMode = when (settings.video.videoScaling) {
                 VideoScaling.FIT_CROP -> MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
                 VideoScaling.FIT_TO_SCREEN -> MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT
@@ -195,14 +198,16 @@ class VideoWallpaperService : WallpaperService() {
 
             mediaPlayer = MediaPlayer().apply {
                 setOnPreparedListener { mp ->
+                    mediaPlayer = mp
+                    isMediaPlayerPrepared = true
                     videoScalingMode?.let {
                         mp.setVideoScalingMode(videoScalingMode)
                     }
-                    mediaPlayer = mp
-                    applyPendingPlaybackState()
+                    updatePlayState()
                 }
                 setOnErrorListener { mp, what, extra ->
                     FirebaseCrashlytics.getInstance().log("MediaPlayer Error: what=$what extra=$extra")
+                    mediaPlayer = mp
                     release()
                     true
                 }
@@ -214,34 +219,35 @@ class VideoWallpaperService : WallpaperService() {
                 isLooping = true
                 setDataSource(this@VideoWallpaperService, Uri.fromFile(file))
                 setVolume(volume, volume)
-                prepare()
+                prepareAsync()
             }
         }
 
-        private fun updatePlaybackState(visible: Boolean, isPaused: Boolean) {
-            this.isVisible = visible
-            this.isPaused = isPaused
-            applyPendingPlaybackState()
-        }
-
-        private fun applyPendingPlaybackState() {
+        private fun updatePlayState() {
+            if (!isMediaPlayerPrepared) return
             val player = mediaPlayer ?: return
 
             val shouldPlay = when {
                 isPaused -> false
-                settings.general.playOffscreen -> true
-                else -> isVisible
+                isVisible -> true
+                else -> settings.general.playOffscreen
             }
+
             runCatching {
-                if (shouldPlay) {
-                    if (!player.isPlaying) {
-                        player.start()
-                    }
+                val isActuallyPlaying = player.isPlaying
+
+                if (shouldPlay && !isActuallyPlaying) {
+                    player.start()
                 } else if (player.isPlaying) {
                     player.pause()
                 }
             }.onFailure { error ->
                 FirebaseCrashlytics.getInstance().recordException(error)
+
+                //If the player is in an invalid state, release it so it can be recreated
+                if (error is IllegalStateException) {
+                    release()
+                }
             }
         }
     }

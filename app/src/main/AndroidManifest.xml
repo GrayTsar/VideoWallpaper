@@ -13,6 +13,13 @@
     <uses-permission android:name="com.huawei.android.launcher.permission.READ_SETTINGS" />
     <uses-permission android:name="com.huawei.android.launcher.permission.WRITE_SETTINGS" />
 
+    <attribution
+        android:label="@string/description"
+        android:tag="@string/empty" />
+    <attribution
+        android:label="@string/description"
+        android:tag="audioPlayback" />
+
     <application
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/data_extraction_rules"
