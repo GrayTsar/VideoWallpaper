@@ -56,11 +56,34 @@ abstract class BaseImageRenderer(
 
     protected abstract fun loadContent(file: File)
 
-    protected abstract fun drawOriginal(canvas: Canvas)
+    /**
+     * Draws the content scaled to fill the entire screen dimensions.
+     * With cropping off the edges that do not fit the screens aspect ratio
+     *
+     * @param canvas The [Canvas] on which the content should be drawn.
+     */
+    protected abstract fun drawFitCrop(canvas: Canvas)
 
+    /**
+     * Draws the content scaled to fit the entire screen dimensions.
+     *
+     * @param canvas The [Canvas] on which the content should be drawn.
+     */
+    protected abstract fun drawFitToScreen(canvas: Canvas)
+
+    /**
+     * Draws the content centered on the provided [canvas].
+     *
+     * @param canvas The [Canvas] on which the content should be drawn.
+     */
     protected abstract fun drawCenter(canvas: Canvas)
 
-    protected abstract fun drawFit(canvas: Canvas)
+    /**
+     * Draws the content at its original size and position (top-left) onto the provided [canvas].
+     *
+     * @param canvas The canvas on which the image drawable will be rendered.
+     */
+    protected abstract fun drawOriginal(canvas: Canvas)
 
     protected open fun cleanupContent() = Unit
 
@@ -129,7 +152,8 @@ abstract class BaseImageRenderer(
         canvas.drawColor(Color.BLACK)
         try {
             when (settings.image.scaleType) {
-                ImageScaling.FIT_TO_SCREEN -> drawFit(canvas)
+                ImageScaling.FIT_CROP -> drawFitCrop(canvas)
+                ImageScaling.FIT_TO_SCREEN -> drawFitToScreen(canvas)
                 ImageScaling.CENTER -> drawCenter(canvas)
                 ImageScaling.ORIGINAL -> drawOriginal(canvas)
             }

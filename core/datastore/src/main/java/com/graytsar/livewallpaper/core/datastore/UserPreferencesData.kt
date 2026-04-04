@@ -103,11 +103,13 @@ enum class WallpaperServiceTypeProto {
 
 @Serializable
 enum class ImageScalingProto {
+    FIT_CROP,
     FIT_TO_SCREEN,
     CENTER,
     ORIGINAL;
 
     fun toDomain() = when (this) {
+        FIT_CROP -> ImageScaling.FIT_CROP
         FIT_TO_SCREEN -> ImageScaling.FIT_TO_SCREEN
         CENTER -> ImageScaling.CENTER
         ORIGINAL -> ImageScaling.ORIGINAL

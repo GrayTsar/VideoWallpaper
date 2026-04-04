@@ -4,13 +4,15 @@ import androidx.annotation.StringRes
 import com.graytsar.livewallpaper.core.common.R
 
 enum class ImageScaling(val value: Int) {
-    FIT_TO_SCREEN(0),
-    CENTER(1),
-    ORIGINAL(2);
+    FIT_CROP(0),
+    FIT_TO_SCREEN(1),
+    CENTER(2),
+    ORIGINAL(3);
 
     @StringRes
     fun toTranslation(): Int {
         return when (this) {
+            FIT_CROP -> R.string.fit_crop
             FIT_TO_SCREEN -> R.string.fit_to_screen
             CENTER -> R.string.center
             ORIGINAL -> R.string.original
@@ -19,6 +21,7 @@ enum class ImageScaling(val value: Int) {
 
     companion object {
         fun getTranslations() = listOf(
+            FIT_CROP.toTranslation(),
             FIT_TO_SCREEN.toTranslation(),
             CENTER.toTranslation(),
             ORIGINAL.toTranslation()

@@ -32,6 +32,7 @@ fun WallpaperServiceType.toProto() = when (this) {
 }
 
 fun ImageScaling.toProto() = when (this) {
+    ImageScaling.FIT_CROP -> ImageScalingProto.FIT_CROP
     ImageScaling.FIT_TO_SCREEN -> ImageScalingProto.FIT_TO_SCREEN
     ImageScaling.CENTER -> ImageScalingProto.CENTER
     ImageScaling.ORIGINAL -> ImageScalingProto.ORIGINAL
