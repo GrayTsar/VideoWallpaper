@@ -67,10 +67,10 @@ class ViewModelPicker @Inject constructor(
      */
     @Suppress("DEPRECATION")
     private fun validateImageLegacy(uri: Uri): Boolean {
-        val movie = openInputStreamForContentResolver(uri).use { Movie.decodeStream(it) }
-        if (movie != null) {
-            return true
-        }//else "Not a GIF"
+        openInputStreamForContentResolver(uri).use { inputStream ->
+            // Check for GIF first
+            if (Movie.decodeStream(inputStream) != null) return true
+        }
 
         // Only proceed to BitmapFactory if the first check failed
         val options = openInputStreamForContentResolver(uri).use { s ->
@@ -79,11 +79,8 @@ class ViewModelPicker @Inject constructor(
             }
         }
 
-        if (options.outWidth == -1 || options.outHeight == -1) {
-            //"Invalid image format or failed to decode"
-            return false
-        }
-        return true
+        return !(options.outWidth == -1 || options.outHeight == -1)
+        //"Invalid image format or failed to decode"
     }
 
     /**

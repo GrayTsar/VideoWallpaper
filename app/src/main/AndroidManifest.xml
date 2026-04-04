@@ -37,6 +37,7 @@
 
         <service
             android:name=".service.ImageWallpaperService"
+            android:directBootAware="true"
             android:enabled="true"
             android:exported="true"
             android:label="@string/app_name"
@@ -52,6 +53,7 @@
 
         <service
             android:name=".service.VideoWallpaperService"
+            android:directBootAware="true"
             android:enabled="true"
             android:exported="true"
             android:label="@string/app_name"

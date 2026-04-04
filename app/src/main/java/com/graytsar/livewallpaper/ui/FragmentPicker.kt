@@ -165,14 +165,6 @@ class FragmentPicker : Fragment() {
      * Launch the video picker.
      */
     private val onVideoClickListener = View.OnClickListener {
-        //val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-        //    addCategory(Intent.CATEGORY_OPENABLE)
-        //    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        //    type = "video/*"
-        //}
-        //videoLauncher.launch(Intent.createChooser(intent, "Video"))
-
-        //val intent = videoLauncher.contract.createIntent(requireContext())
         try {
             videoLauncher.launch("video/*")
         } catch (e: ActivityNotFoundException) {
@@ -184,12 +176,6 @@ class FragmentPicker : Fragment() {
      * Launch the image picker.
      */
     private val onImageClickListener = View.OnClickListener {
-        //val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-        //    addCategory(Intent.CATEGORY_OPENABLE)
-        //    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        //    type = "image/*"
-        //}
-        //imageLauncher.launch(Intent.createChooser(intent, "Image"))
         try {
             imageLauncher.launch("image/*")
         } catch (e: ActivityNotFoundException) {
@@ -206,9 +192,10 @@ class FragmentPicker : Fragment() {
             when (menuItem.itemId) {
                 R.id.menuSettings -> {
                     findNavController().navigate(R.id.fragmentSettings)
+                    return true
                 }
             }
-            return true
+            return false
         }
     }
 }

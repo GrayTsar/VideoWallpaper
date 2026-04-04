@@ -99,10 +99,6 @@ class UserPreferencesRepository(
         it.copy(previewPreference = it.previewPreference.copy(service = service.toProto()))
     }
 
-    suspend fun setPreviewFlags(flag: WallpaperFlag) = update {
-        it.copy(previewPreference = it.previewPreference.copy(flag = flag.toProto()))
-    }
-
     fun getImageEngineSettingsFlow(): Flow<ImageEngineSettings> = dataStore.data.map {
         it.toImageEngineSettings()
     }.distinctUntilChanged()
@@ -141,8 +137,9 @@ class UserPreferencesRepository(
             data
         } else {
             //copy preview data into live wallpaper data
-            val newList =
-                data.livePreference.filter { it.flag != flag.toProto() } + previewSelection.copy(flag = flag.toProto())
+            val newList = data.livePreference.filter {
+                it.flag != flag.toProto()
+            } + previewSelection.copy(flag = flag.toProto())
             data.copy(
                 livePreference = newList,
                 previewPreference = LivePreference() // Reset preview after promotion
