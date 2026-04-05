@@ -5,6 +5,7 @@
 
     <string name="error_image_open">无法打开图像</string>
     <string name="error_video_open">视频打不开</string>
+    <string name="error_import">文件无法导入</string>
 
     <!-- settings -->
     <string name="section_theme">主题</string>

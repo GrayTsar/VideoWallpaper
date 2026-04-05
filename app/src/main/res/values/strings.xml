@@ -5,6 +5,7 @@
 
     <string name="error_image_open">Image could not be opened</string>
     <string name="error_video_open">Video could not be opened</string>
+    <string name="error_import">File could not be imported</string>
 
     <string name="empty" translatable="false"></string>
     <string name="description" translatable="false">wallpaper playback</string>

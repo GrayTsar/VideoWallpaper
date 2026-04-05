@@ -5,7 +5,6 @@ import android.app.WallpaperManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -19,6 +18,8 @@ import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -29,65 +30,26 @@ import com.graytsar.livewallpaper.databinding.FragmentPickerBinding
 import com.graytsar.livewallpaper.service.ImageWallpaperService
 import com.graytsar.livewallpaper.service.VideoWallpaperService
 import com.graytsar.livewallpaper.service.currentFlag
-import com.graytsar.livewallpaper.util.Util
-import com.graytsar.livewallpaper.util.toServiceType
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import java.io.File
-
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class FragmentPicker : Fragment() {
-    val viewModel: ViewModelPicker by viewModels()
+    private val viewModel: ViewModelPicker by viewModels()
 
     private val wallpaperLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                runBlocking {
-                    viewModel.userPreferencesRepository.promotePreviewSelectionToWallpaper(currentFlag)
-                }
-            } else {
-                runBlocking {
-                    val previewPath = viewModel.userPreferencesRepository.getPreviewPath()
-                    if (previewPath != null) {
-                        File(previewPath).delete()
-                    }
-                    viewModel.userPreferencesRepository.clearPreviewData()
-                }
-            }
+            viewModel.onWallpaperSetResult(result.resultCode == Activity.RESULT_OK, currentFlag)
         }
 
-    /**
-     * Video picker launcher.
-     */
     private val videoLauncher =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { result ->
-            val videoUri: Uri = result ?: return@registerForActivityResult
-            val result = runCatching { viewModel.validateVideo(videoUri, requireContext()) }.getOrElse { false }
-            if (result) {
-                val path = saveVideo(videoUri) ?: return@registerForActivityResult
-                saveSelection(path, WallpaperType.VIDEO)
-                launchWallpaperService(WallpaperType.VIDEO.toServiceType())
-            } else {
-                showError(R.string.error_image_open)
-            }
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let { viewModel.onMediaSelected(it, WallpaperType.VIDEO) }
         }
 
-    /**
-     * Image picker launcher.
-     */
     private val imageLauncher =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { result ->
-            val imageUri: Uri = result ?: return@registerForActivityResult
-            val result = runCatching { viewModel.validateImage(imageUri) }.getOrElse { false }
-            if (result) {
-                val path = saveImage(imageUri) ?: return@registerForActivityResult
-                saveSelection(path, WallpaperType.IMAGE)
-                launchWallpaperService(WallpaperType.IMAGE.toServiceType())
-            } else {
-                showError(R.string.error_image_open)
-            }
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let { viewModel.onMediaSelected(it, WallpaperType.IMAGE) }
         }
 
     override fun onCreateView(
@@ -104,42 +66,31 @@ class FragmentPicker : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().addMenuProvider(menuProvider, viewLifecycleOwner, Lifecycle.State.RESUMED)
-    }
 
-    private fun saveSelection(path: File, type: WallpaperType) {
-        runBlocking(Dispatchers.IO) {
-            Util.cleanup(requireContext(), viewModel.userPreferencesRepository, path)
-            viewModel.userPreferencesRepository.setPreviewWallpaperType(type)
-            viewModel.userPreferencesRepository.setPreviewWallpaperService(type.toServiceType())
-            viewModel.userPreferencesRepository.setPreviewPath(path.path)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.events.collect { event ->
+                    when (event) {
+                        is ViewModelPicker.PickerEvent.LaunchWallpaperService -> {
+                            launchWallpaperService(event.serviceType)
+                        }
+
+                        is ViewModelPicker.PickerEvent.Error -> {
+                            val errorMessage = when (event.error) {
+                                ViewModelPicker.PickerUiError.InvalidImage -> R.string.error_image_open
+                                ViewModelPicker.PickerUiError.InvalidVideo -> R.string.error_video_open
+                                ViewModelPicker.PickerUiError.Import -> R.string.error_import
+                            }
+                            showError(errorMessage)
+                        }
+                    }
+                }
+            }
         }
     }
 
-    /**
-     * Show an error message.
-     */
     private fun showError(@StringRes message: Int) {
-        Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
-    }
-
-    private fun saveImage(uri: Uri): File? {
-        try {
-            val stream = viewModel.openInputStreamForContentResolver(uri)
-            return Util.importImage(stream, requireContext())
-        } catch (e: Exception) {
-            showError(R.string.error_image_open)
-            return null
-        }
-    }
-
-    private fun saveVideo(uri: Uri): File? {
-        try {
-            val inputStream = viewModel.openInputStreamForContentResolver(uri)
-            return Util.importVideo(inputStream, requireContext())
-        } catch (e: Exception) {
-            showError(R.string.error_image_open)
-            return null
-        }
+        Snackbar.make(requireView(), message, Snackbar.LENGTH_SHORT).show()
     }
 
     private fun launchWallpaperService(serviceType: WallpaperServiceType) {
@@ -161,9 +112,6 @@ class FragmentPicker : Fragment() {
         }
     }
 
-    /**
-     * Launch the video picker.
-     */
     private val onVideoClickListener = View.OnClickListener {
         try {
             videoLauncher.launch("video/*")
@@ -172,9 +120,6 @@ class FragmentPicker : Fragment() {
         }
     }
 
-    /**
-     * Launch the image picker.
-     */
     private val onImageClickListener = View.OnClickListener {
         try {
             imageLauncher.launch("image/*")
@@ -189,13 +134,14 @@ class FragmentPicker : Fragment() {
         }
 
         override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-            when (menuItem.itemId) {
+            return when (menuItem.itemId) {
                 R.id.menuSettings -> {
                     findNavController().navigate(R.id.fragmentSettings)
-                    return true
+                    true
                 }
+
+                else -> false
             }
-            return false
         }
     }
 }

@@ -5,6 +5,7 @@
 
     <string name="error_image_open">No se podía abrir la imagen</string>
     <string name="error_video_open">No se podía abrir el video</string>
+    <string name="error_import">No se pudo importar el archivo</string>
 
     <!-- settings -->
     <string name="section_theme">Tema</string>

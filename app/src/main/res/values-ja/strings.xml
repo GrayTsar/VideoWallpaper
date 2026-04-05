@@ -5,6 +5,7 @@
 
     <string name="error_image_open">画像を開けませんでした</string>
     <string name="error_video_open">ビデオを開けませんでした</string>
+    <string name="error_import">ファイルをインポートできませんでした</string>
 
     <!-- settings -->
     <string name="section_theme">テーマ</string>

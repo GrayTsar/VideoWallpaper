@@ -1,98 +1,89 @@
 package com.graytsar.livewallpaper.ui
 
-import android.content.ContentResolver
-import android.content.Context
-import android.graphics.BitmapFactory
-import android.graphics.ImageDecoder
-import android.graphics.Movie
-import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
-import com.google.firebase.crashlytics.FirebaseCrashlytics
+import androidx.lifecycle.viewModelScope
+import com.graytsar.livewallpaper.core.common.model.WallpaperFlag
+import com.graytsar.livewallpaper.core.common.model.WallpaperServiceType
+import com.graytsar.livewallpaper.core.common.model.WallpaperType
 import com.graytsar.livewallpaper.core.repository.UserPreferencesRepository
+import com.graytsar.livewallpaper.domain.CleanupMediaUseCase
+import com.graytsar.livewallpaper.domain.ImportMediaUseCase
+import com.graytsar.livewallpaper.domain.ValidateMediaUseCase
+import com.graytsar.livewallpaper.util.toServiceType
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.io.InputStream
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
 class ViewModelPicker @Inject constructor(
-    val contentResolver: ContentResolver,
+    private val validateMediaUseCase: ValidateMediaUseCase,
+    private val importMediaUseCase: ImportMediaUseCase,
+    private val cleanupMediaUseCase: CleanupMediaUseCase,
     val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
-    /**
-     *
-     * @throws IllegalArgumentException – if the Uri is invalid
-     * @throws SecurityException – if the Uri cannot be used due to lack of permission
-     */
-    fun validateVideo(uri: Uri, context: Context): Boolean {
-        val retriever = MediaMetadataRetriever()
-        try {
-            retriever.setDataSource(context, uri)
-            // Check if the file actually contains a video track
-            val hasVideo = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO)
-            return hasVideo != null
-        } catch (e: Exception) {
-            FirebaseCrashlytics.getInstance().recordException(e)
-            return false
-        } finally {
-            runCatching { retriever.release() }
-        }
-    }
+    private val _events = MutableSharedFlow<PickerEvent>()
+    val events = _events.asSharedFlow()
 
-    fun validateImage(uri: Uri): Boolean {
-        return if (Build.VERSION.SDK_INT >= 28) {
-            validateImageNew(uri)
-        } else {
-            validateImageLegacy(uri)
-        }
-    }
+    fun onMediaSelected(uri: Uri, type: WallpaperType) {
+        viewModelScope.launch {
+            val isValid = when (type) {
+                WallpaperType.IMAGE -> validateMediaUseCase.validateImage(uri)
+                WallpaperType.VIDEO -> validateMediaUseCase.validateVideo(uri)
+                else -> false
+            }
 
-    /**
-     *
-     * @throws java.io.IOException if file is not found, is an unsupported format, or cannot be decoded for any reason.
-     */
-    @RequiresApi(Build.VERSION_CODES.P)
-    private fun validateImageNew(uri: Uri): Boolean {
-        val source = ImageDecoder.createSource(contentResolver, uri)
-        ImageDecoder.decodeDrawable(source)
-        return true
-    }
-
-    /**
-     *
-     * @throws IllegalArgumentException if the provided URI does not point to a valid image format.
-     */
-    @Suppress("DEPRECATION")
-    private fun validateImageLegacy(uri: Uri): Boolean {
-        openInputStreamForContentResolver(uri).use { inputStream ->
-            // Check for GIF first
-            if (Movie.decodeStream(inputStream) != null) return true
-        }
-
-        // Only proceed to BitmapFactory if the first check failed
-        val options = openInputStreamForContentResolver(uri).use { s ->
-            BitmapFactory.Options().apply { inJustDecodeBounds = true }.also {
-                BitmapFactory.decodeStream(s, null, it)
+            if (isValid) {
+                val file = runCatching { importMediaUseCase(uri, type) }.getOrElse { null }
+                if (file != null) {
+                    cleanupMediaUseCase(file.path)
+                    saveSelection(file.path, type)
+                    _events.emit(PickerEvent.LaunchWallpaperService(type.toServiceType()))
+                } else {
+                    _events.emit(PickerEvent.Error(error = PickerUiError.Import))
+                }
+            } else {
+                when (type) {
+                    WallpaperType.NONE -> _events.emit(PickerEvent.Error(error = PickerUiError.Import))
+                    WallpaperType.IMAGE -> _events.emit(PickerEvent.Error(error = PickerUiError.InvalidImage))
+                    WallpaperType.VIDEO -> _events.emit(PickerEvent.Error(error = PickerUiError.InvalidVideo))
+                }
             }
         }
-
-        return !(options.outWidth == -1 || options.outHeight == -1)
-        //"Invalid image format or failed to decode"
     }
 
-    /**
-     *
-     * @throws java.io.FileNotFoundException if the provided URI could not be opened.
-     * @throws java.io.IOException if an I/O error occurs.
-     * @throws IllegalStateException if the content provider is not responding or has recently crashed.
-     */
-    fun openInputStreamForContentResolver(
-        uri: Uri
-    ): InputStream {
-        val stream = contentResolver.openInputStream(uri)
-        return checkNotNull(stream) { "provider recently crashed" }
+    private suspend fun saveSelection(path: String, type: WallpaperType) {
+        userPreferencesRepository.setPreviewWallpaperType(type)
+        userPreferencesRepository.setPreviewWallpaperService(type.toServiceType())
+        userPreferencesRepository.setPreviewPath(path)
+    }
+
+    fun onWallpaperSetResult(success: Boolean, flag: WallpaperFlag) {
+        viewModelScope.launch() {
+            if (success) {
+                userPreferencesRepository.promotePreviewSelectionToWallpaper(flag)
+            } else {
+                val previewPath = userPreferencesRepository.getPreviewPath()
+                if (previewPath != null) {
+                    File(previewPath).delete()
+                }
+                userPreferencesRepository.clearPreviewData()
+            }
+        }
+    }
+
+    sealed class PickerEvent {
+        data class LaunchWallpaperService(val serviceType: WallpaperServiceType) : PickerEvent()
+        data class Error(val error: PickerUiError) : PickerEvent()
+    }
+
+    enum class PickerUiError {
+        InvalidImage,
+        InvalidVideo,
+        Import;
     }
 }
