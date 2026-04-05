@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.android.junit5)
 }
 
 android {
@@ -42,7 +43,11 @@ dependencies {
     implementation(libs.material)
 
     //testing
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.test.ext.junit)
+    testImplementation(platform(libs.junit5.bom))
+    testImplementation(libs.junit5.api)
+    testImplementation(libs.kotest.assertions.core)
     androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.kotest.assertions.core)
+    androidTestImplementation(libs.junit5.api)
+    androidTestImplementation(libs.junit5.android.core)
 }

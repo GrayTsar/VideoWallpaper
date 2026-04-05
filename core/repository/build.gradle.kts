@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.google.hilt)
+    alias(libs.plugins.android.junit5)
 }
 
 android {
@@ -52,9 +53,13 @@ dependencies {
     implementation(libs.androidx.datastore)
     implementation(libs.kotlinx.serialization.protobuf)
 
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.androidx.test.espresso.core)
+    //testing
+    testImplementation(platform(libs.junit5.bom))
+    testImplementation(libs.junit5.api)
+    testImplementation(libs.kotest.assertions.core)
+    androidTestImplementation(libs.kotest.assertions.core)
+    androidTestImplementation(libs.junit5.api)
+    androidTestImplementation(libs.junit5.android.core)
 
     implementation(project(":core:common"))
     implementation(project(":core:datastore"))

@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
     alias(libs.plugins.google.hilt) apply false
+    alias(libs.plugins.android.junit5) apply false
 }
 
 tasks.register("clean", Delete::class) {

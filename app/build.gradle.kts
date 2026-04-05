@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.android.junit5)
 }
 
 android {
@@ -52,6 +53,14 @@ android {
 
     buildFeatures {
         viewBinding = true
+    }
+
+    testOptions {
+        unitTests {
+            unitTests.all {
+                it.useJUnitPlatform()
+            }
+        }
     }
 }
 
@@ -109,9 +118,22 @@ dependencies {
     implementation(libs.arrow.kt)
 
     //test
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.test.ext.junit)
+    testImplementation(platform(libs.junit5.bom))
+    testImplementation(libs.junit5.api)
+    testRuntimeOnly(libs.junit5.engine)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotest.assertions.core)
+    //test instrumented
     androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.junit5.api)
+    androidTestImplementation(libs.junit5.android.core)
+    androidTestImplementation(libs.mockk)
+    androidTestImplementation(libs.kotest.assertions.core)
+    testRuntimeOnly(libs.junit5.android.runner)
+    //test coroutines
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+
 
     implementation(project(":core:common"))
     implementation(project(":core:datastore"))
