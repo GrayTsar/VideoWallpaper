@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.graytsar.livewallpaper.core.common.model.WallpaperFlag
 import com.graytsar.livewallpaper.core.common.model.WallpaperServiceType
 import com.graytsar.livewallpaper.core.common.model.WallpaperType
-import com.graytsar.livewallpaper.core.repository.UserPreferencesRepository
 import com.graytsar.livewallpaper.domain.CleanupMediaUseCase
 import com.graytsar.livewallpaper.domain.ImportMediaUseCase
 import com.graytsar.livewallpaper.domain.ValidateMediaUseCase
@@ -15,7 +14,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -23,7 +21,7 @@ class ViewModelPicker @Inject constructor(
     private val validateMediaUseCase: ValidateMediaUseCase,
     private val importMediaUseCase: ImportMediaUseCase,
     private val cleanupMediaUseCase: CleanupMediaUseCase,
-    val userPreferencesRepository: UserPreferencesRepository
+    private val pickerSelectionStore: PickerSelectionStore
 ) : ViewModel() {
 
     private val _events = MutableSharedFlow<PickerEvent>()
@@ -41,7 +39,7 @@ class ViewModelPicker @Inject constructor(
                 val file = runCatching { importMediaUseCase(uri, type) }.getOrElse { null }
                 if (file != null) {
                     cleanupMediaUseCase(file.path)
-                    saveSelection(file.path, type)
+                    pickerSelectionStore.saveSelection(file.path, type)
                     _events.emit(PickerEvent.LaunchWallpaperService(type.toServiceType()))
                 } else {
                     _events.emit(PickerEvent.Error(error = PickerUiError.Import))
@@ -56,22 +54,12 @@ class ViewModelPicker @Inject constructor(
         }
     }
 
-    private suspend fun saveSelection(path: String, type: WallpaperType) {
-        userPreferencesRepository.setPreviewWallpaperType(type)
-        userPreferencesRepository.setPreviewWallpaperService(type.toServiceType())
-        userPreferencesRepository.setPreviewPath(path)
-    }
-
     fun onWallpaperSetResult(success: Boolean, flag: WallpaperFlag) {
-        viewModelScope.launch() {
+        viewModelScope.launch {
             if (success) {
-                userPreferencesRepository.promotePreviewSelectionToWallpaper(flag)
+                pickerSelectionStore.promotePreviewSelectionToWallpaper(flag)
             } else {
-                val previewPath = userPreferencesRepository.getPreviewPath()
-                if (previewPath != null) {
-                    File(previewPath).delete()
-                }
-                userPreferencesRepository.clearPreviewData()
+                pickerSelectionStore.clearPreviewSelection()
             }
         }
     }

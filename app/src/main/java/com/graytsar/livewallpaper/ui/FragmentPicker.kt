@@ -70,21 +70,25 @@ class FragmentPicker : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.events.collect { event ->
-                    when (event) {
-                        is ViewModelPicker.PickerEvent.LaunchWallpaperService -> {
-                            launchWallpaperService(event.serviceType)
-                        }
-
-                        is ViewModelPicker.PickerEvent.Error -> {
-                            val errorMessage = when (event.error) {
-                                ViewModelPicker.PickerUiError.InvalidImage -> R.string.error_image_open
-                                ViewModelPicker.PickerUiError.InvalidVideo -> R.string.error_video_open
-                                ViewModelPicker.PickerUiError.Import -> R.string.error_import
-                            }
-                            showError(errorMessage)
-                        }
-                    }
+                    handlePickerEvent(event)
                 }
+            }
+        }
+    }
+
+    internal fun handlePickerEvent(event: ViewModelPicker.PickerEvent) {
+        when (event) {
+            is ViewModelPicker.PickerEvent.LaunchWallpaperService -> {
+                launchWallpaperService(event.serviceType)
+            }
+
+            is ViewModelPicker.PickerEvent.Error -> {
+                val errorMessage = when (event.error) {
+                    ViewModelPicker.PickerUiError.InvalidImage -> R.string.error_image_open
+                    ViewModelPicker.PickerUiError.InvalidVideo -> R.string.error_video_open
+                    ViewModelPicker.PickerUiError.Import -> R.string.error_import
+                }
+                showError(errorMessage)
             }
         }
     }
@@ -115,7 +119,7 @@ class FragmentPicker : Fragment() {
     private val onVideoClickListener = View.OnClickListener {
         try {
             videoLauncher.launch("video/*")
-        } catch (e: ActivityNotFoundException) {
+        } catch (_: ActivityNotFoundException) {
             Snackbar.make(requireView(), "No video picker app found on this device.", Snackbar.LENGTH_SHORT).show()
         }
     }
@@ -123,7 +127,7 @@ class FragmentPicker : Fragment() {
     private val onImageClickListener = View.OnClickListener {
         try {
             imageLauncher.launch("image/*")
-        } catch (e: ActivityNotFoundException) {
+        } catch (_: ActivityNotFoundException) {
             Snackbar.make(requireView(), "No image picker app found on this device.", Snackbar.LENGTH_SHORT).show()
         }
     }

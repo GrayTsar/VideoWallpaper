@@ -56,7 +56,10 @@ dependencies {
     //testing
     testImplementation(platform(libs.junit5.bom))
     testImplementation(libs.junit5.api)
+    testRuntimeOnly(libs.junit5.engine)
     testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
     androidTestImplementation(libs.kotest.assertions.core)
     androidTestImplementation(libs.junit5.api)
     androidTestImplementation(libs.junit5.android.core)

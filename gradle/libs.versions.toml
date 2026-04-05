@@ -58,6 +58,7 @@ hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-comp
 androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltCompiler" }
 play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-test-espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espressoCore" }
 arrow-kt = { group = "io.arrow-kt", name = "arrow-core", version.ref = "arrow" }
 #testing
 junit5-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit5" }

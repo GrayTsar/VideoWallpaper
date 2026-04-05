@@ -16,15 +16,20 @@ class ImportMediaUseCase @Inject constructor(
     private val contentResolver: ContentResolver
 ) {
     operator suspend fun invoke(uri: Uri, type: WallpaperType): File? {
-        val inputStream = contentResolver.openInputStream(uri) ?: return null
         return when (type) {
-            WallpaperType.IMAGE -> importImage(inputStream, context)
-            WallpaperType.VIDEO -> importVideo(inputStream, context)
+            WallpaperType.IMAGE -> contentResolver.openInputStream(uri)?.use { inputStream ->
+                importImage(inputStream, context)
+            }
+
+            WallpaperType.VIDEO -> contentResolver.openInputStream(uri)?.use { inputStream ->
+                importVideo(inputStream, context)
+            }
+
             else -> null
         }
     }
 
-    private suspend fun importFile(inputStream: InputStream, directory: File, prefix: String): File {
+    private fun importFile(inputStream: InputStream, directory: File, prefix: String): File {
         val time = System.currentTimeMillis()
         val file = File(directory, "${prefix}_$time")
         file.outputStream().use { output ->
@@ -35,11 +40,11 @@ class ImportMediaUseCase @Inject constructor(
         return file
     }
 
-    private suspend fun importImage(inputStream: InputStream, context: Context): File {
+    private fun importImage(inputStream: InputStream, context: Context): File {
         return importFile(inputStream, getImageImportDirectory(context), "image")
     }
 
-    private suspend fun importVideo(inputStream: InputStream, context: Context): File {
+    private fun importVideo(inputStream: InputStream, context: Context): File {
         return importFile(inputStream, getVideoImportDirectory(context), "video")
     }
 }

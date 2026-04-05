@@ -125,6 +125,7 @@ dependencies {
     testImplementation(libs.kotest.assertions.core)
     //test instrumented
     androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.test.espresso.intents)
     androidTestImplementation(libs.junit5.api)
     androidTestImplementation(libs.junit5.android.core)
     androidTestImplementation(libs.mockk)
