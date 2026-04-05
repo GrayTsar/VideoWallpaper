@@ -10,15 +10,16 @@
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:liftOnScroll="true">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:theme="@style/ThemeOverwrite.Toolbar"
             app:menu="@menu/menu_main"
-            tools:title="Lorem Ipsum" />
+            app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge"
+            tools:title="Raibu" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.fragment.app.FragmentContainerView

@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
 import com.graytsar.livewallpaper.core.common.model.ImageScaling
@@ -24,14 +24,14 @@ import kotlinx.coroutines.withContext
 class FragmentSettings : Fragment() {
     val viewModel: ViewModelSettings by viewModels<ViewModelSettings>()
 
-    lateinit var switchDarkMode: SwitchMaterial
+    lateinit var switchDarkMode: MaterialSwitch
     lateinit var layoutImageScaling: TextInputLayout
     lateinit var autoCompleteImageScaling: MaterialAutoCompleteTextView
-    lateinit var switchVideoAudio: SwitchMaterial
+    lateinit var switchVideoAudio: MaterialSwitch
     lateinit var layoutVideoScaling: TextInputLayout
     lateinit var autoCompleteVideoScaling: MaterialAutoCompleteTextView
-    lateinit var switchDoubleTapToPause: SwitchMaterial
-    lateinit var switchPlayOffscreen: SwitchMaterial
+    lateinit var switchDoubleTapToPause: MaterialSwitch
+    lateinit var switchPlayOffscreen: MaterialSwitch
 
     override fun onCreateView(
         inflater: LayoutInflater,
